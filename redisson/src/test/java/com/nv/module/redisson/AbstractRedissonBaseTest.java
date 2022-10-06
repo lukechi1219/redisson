@@ -10,6 +10,7 @@ import com.nv.module.redis.RedisClientTest;
 import org.redisson.Redisson;
 import org.redisson.api.RExpirable;
 import org.redisson.api.RedissonClient;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
 
 public abstract class AbstractRedissonBaseTest {
@@ -41,11 +42,14 @@ public abstract class AbstractRedissonBaseTest {
 				if (url == null) {
 					//	throw new RuntimeException("File not found: " + fileName);
 
-					config = new Config();
+					config = new Config()
+						.setCodec(JsonJacksonCodec.INSTANCE)
+					;
 
 					config.useSingleServer()
 						.setAddress("redis://127.0.0.1:6379")
-						.setPassword("luke1217");
+						.setPassword("luke1217")
+					;
 
 				} else {
 					final File file = new File(url.getPath());
