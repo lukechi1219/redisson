@@ -1,61 +1,29 @@
 package com.nv.module.redis;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.sql.Timestamp;
 
+import com.nv.module.redisson.AbstractRedissonBaseTest;
+import com.nv.util.RedisUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.redisson.Redisson;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RList;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RQueue;
-import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.Codec;
 import org.redisson.config.Config;
 
-public class RedisClientTest {
+public class RedisClientTest extends AbstractRedissonBaseTest {
 
-	private static final String fileName = "redis.yaml";
-	private static RedissonClient client = null;
 
 	@BeforeAll
-	public static void beforeAll() throws IOException {
-
-		URL url = RedisClientTest.class.getClassLoader().getResource("properties/" + fileName);
-
-		if (url == null) {
-			throw new RuntimeException("File not found: " + fileName);
-		}
-
-		final File file = new File(url.getPath());
-
-		//		System.out.println(file.getAbsolutePath());
-
-		client = Redisson.create(Config.fromYAML(file));
+	public static void beforeAll() {
 	}
 
 	@AfterAll
 	public static void afterAll() {
-
-		if (client != null) {
-			client.shutdown();
-		}
-	}
-
-	public static class RedisUtil {
-
-		public static final String REDIS_TAG = ":";
-		private static final String SERVER_TYPE = "redisson";
-		public static final String REDIS_PROJECT_ENV_PREFIX = "cps" + REDIS_TAG + SERVER_TYPE + REDIS_TAG;
-
-		public static String getKey(String... values) {
-
-			return REDIS_PROJECT_ENV_PREFIX + String.join(REDIS_TAG, values);
-		}
+		AbstractRedissonBaseTest.afterAll();
 	}
 
 	/**
@@ -66,7 +34,7 @@ public class RedisClientTest {
 
 		//		System.out.println("test");
 
-		final Config config = client.getConfig();
+		final Config config = getClient().getConfig();
 
 		final Codec codec = config.getCodec();
 
@@ -74,7 +42,7 @@ public class RedisClientTest {
 
 		final String key = RedisUtil.getKey("luke.test");
 
-		client.getBucket(key).set("test");
+		getClient().getBucket(key).set("test");
 	}
 
 	@Test
@@ -86,7 +54,7 @@ public class RedisClientTest {
 
 		final String key = RedisUtil.getKey("luke.test.list", "strList");
 
-		RList<String> list = client.getList(key);
+		RList<String> list = getClient().getList(key);
 
 		list.add(data1);
 		list.add(data2);
@@ -107,7 +75,7 @@ public class RedisClientTest {
 
 		final String key = RedisUtil.getKey("luke.test.queue", "strQueue");
 
-		RQueue<String> queue = client.getQueue(key);
+		RQueue<String> queue = getClient().getQueue(key);
 
 		queue.add(data1);
 		queue.add(data2);
@@ -121,6 +89,8 @@ public class RedisClientTest {
 	@Test
 	public void testLocalCachedMap() throws InterruptedException {
 
+		getClient().getMap("test");
+
 		final LocalCachedMapOptions<String, String> options = LocalCachedMapOptions.defaults();
 
 		options
@@ -130,7 +100,7 @@ public class RedisClientTest {
 		final String key = RedisUtil.getKey("luke.test.localCachedMap", "map");
 		System.out.println(key);
 
-		final RLocalCachedMap<String, String> map = client.getLocalCachedMap(key, options);
+		final RLocalCachedMap<String, String> map = getClient().getLocalCachedMap(key, options);
 
 		map.put("key1", "value1");
 		map.put("key2", "value2");
