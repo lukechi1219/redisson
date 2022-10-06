@@ -34,17 +34,26 @@ public abstract class AbstractRedissonBaseTest {
 		try {
 			if (client == null) {
 
-				URL url = RedisClientTest.class.getClassLoader().getResource("properties/" + fileName);
+				final Config config;
+
+				final URL url = RedisClientTest.class.getClassLoader().getResource("properties/" + fileName);
 
 				if (url == null) {
-					throw new RuntimeException("File not found: " + fileName);
+					//	throw new RuntimeException("File not found: " + fileName);
+
+					config = new Config();
+
+					config.useSingleServer()
+						.setAddress("redis://127.0.0.1:6379")
+						.setPassword("luke1217");
+
+				} else {
+					final File file = new File(url.getPath());
+					//	System.out.println(file.getAbsolutePath());
+					config = Config.fromYAML(file);
 				}
 
-				final File file = new File(url.getPath());
-
-				//		System.out.println(file.getAbsolutePath());
-
-				client = Redisson.create(Config.fromYAML(file));
+				client = Redisson.create(config);
 			}
 
 			return client;
