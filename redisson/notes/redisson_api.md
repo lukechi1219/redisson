@@ -72,6 +72,22 @@ public class Demo {
 The RBitSet interface in Redisson represents a bit vector that can expand as necessary, with a maximum size of
 4,294,967,295 bits.
 
+```java
+public class Demo {
+
+	public static void main(String[] args) {
+
+		final String key = RedisUtil.getKey("luke.test", "bitSet", "key");
+
+		final RBitSet bitSet = client.getBitSet(key + ":1");
+
+		bitSet.set(0, true);
+		bitSet.set(2, false);
+		bitSet.set(4, true);
+	}
+}
+```
+
 ## AtomicLong
 
 as title

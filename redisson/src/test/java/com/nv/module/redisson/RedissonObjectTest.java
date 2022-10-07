@@ -11,6 +11,7 @@ import com.nv.util.RedisUtil;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.GeoPosition;
 import org.redisson.api.RBinaryStream;
+import org.redisson.api.RBitSet;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
 import org.redisson.api.RGeo;
@@ -110,5 +111,24 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final Map<Object, GeoPosition> pos = geo.pos(geoMemberName);
 
 		System.out.println(pos);
+	}
+
+	@Test
+	public void testBitSet() {
+
+		final String key = RedisUtil.getKey("luke.test", "bitSet", "key");
+
+		final RBitSet bitSet = client.getBitSet(key + ":1");
+		bitSet.clear();
+
+		bitSet.set(0, true);
+		bitSet.set(2, false);
+		bitSet.set(3, true);
+
+		final long size = bitSet.size();
+		System.out.println("size: " + size);
+
+		final long length = bitSet.length();
+		System.out.println("length: " + length);
 	}
 }
