@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.nv.util.RedisUtil;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.GeoPosition;
+import org.redisson.api.RAtomicDouble;
+import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBinaryStream;
 import org.redisson.api.RBitSet;
 import org.redisson.api.RBucket;
@@ -130,5 +132,66 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		final long length = bitSet.length();
 		System.out.println("length: " + length);
+	}
+
+	@Test
+	public void testAtomicLong() {
+
+		final String key = RedisUtil.getKey("luke.test", "atomicLong", "key");
+
+		final RAtomicLong atomicLong = client.getAtomicLong(key + ":1");
+
+		// INCR
+		// return the value of key after the increment
+		final long longVal1 = atomicLong.incrementAndGet();
+		System.out.println("longVal1: " + longVal1);
+
+		// DECR
+		// return the value of key after the decrement
+		final long longVal2 = atomicLong.decrementAndGet();
+		System.out.println("longVal2: " + longVal2);
+
+		// INCRBY
+		final long longVal3 = atomicLong.getAndIncrement();
+		System.out.println("longVal3: " + longVal3);
+
+		// DECRBY + convertor
+		final long longVal4 = atomicLong.getAndDecrement();
+		System.out.println("longVal4: " + longVal4);
+	}
+
+	@Test
+	public void testAtomicDouble() {
+
+		final String key = RedisUtil.getKey("luke.test", "atomicDouble", "key");
+
+		final RAtomicDouble atomicDouble = client.getAtomicDouble(key + ":1");
+		atomicDouble.set(0.1045);
+
+		final boolean result = atomicDouble.compareAndSet(1, 2);
+		System.out.println("result: " + result);
+
+		// INCR
+		// return the value of key after the increment
+		final double doubleVal1 = atomicDouble.incrementAndGet();
+		System.out.println("doubleVal1: " + doubleVal1);
+
+		// DECR
+		// return the value of key after the decrement
+		final double doubleVal2 = atomicDouble.decrementAndGet();
+		System.out.println("doubleVal2: " + doubleVal2);
+
+		// INCRBY
+		final double doubleVal3 = atomicDouble.getAndIncrement();
+		System.out.println("doubleVal3: " + doubleVal3);
+
+		// DECRBY + convertor
+		final double doubleVal4 = atomicDouble.getAndDecrement();
+		System.out.println("doubleVal4: " + doubleVal4);
+	}
+
+	@Test
+	public void testTopic() {
+
 	}
 }
