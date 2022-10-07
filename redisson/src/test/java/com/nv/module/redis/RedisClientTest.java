@@ -16,7 +16,6 @@ import org.redisson.config.Config;
 
 public class RedisClientTest extends AbstractRedissonBaseTest {
 
-
 	@BeforeAll
 	public static void beforeAll() {
 	}
@@ -42,7 +41,7 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test");
 
-		getClient().getBucket(key).set("test");
+		getClient().<String>getBucket(key).set("test");
 	}
 
 	@Test
