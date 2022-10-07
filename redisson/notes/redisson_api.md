@@ -8,6 +8,7 @@
 refs:
 
 - https://www.baeldung.com/redis-redisson
+- https://dzone.com/articles/overview-of-redisson-the-redis-java-client
 
 # Configurations
 
@@ -52,7 +53,24 @@ Represented by the RBucket class, this object can hold any type of object. This 
 
 ## GeospatialHolder
 
+```java
+public class Demo {
+
+	public static void main(String[] args) {
+
+		final RGeo<Object> geo = client.getGeo(key + ":1");
+
+		final String geoMemberName = "Palermo";
+
+		geo.add(13.361389, 38.115556, geoMemberName);
+	}
+}
+```
+
 ## BitSet
+
+The RBitSet interface in Redisson represents a bit vector that can expand as necessary, with a maximum size of
+4,294,967,295 bits.
 
 ## AtomicLong
 

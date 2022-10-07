@@ -9,9 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nv.util.RedisUtil;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.GeoPosition;
 import org.redisson.api.RBinaryStream;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
+import org.redisson.api.RGeo;
 import org.redisson.api.RedissonClient;
 
 public class RedissonObjectTest extends AbstractRedissonBaseTest {
@@ -76,11 +78,13 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final byte[] bytes11 = ", hello world 1.1".getBytes(StandardCharsets.UTF_8);
 		binaryStream.getOutputStream().write(bytes11);
 		final byte[] bytes11get = binaryStream.get();
-		System.out.println(new String(bytes11get));
+		String data11 = new String(bytes11get, StandardCharsets.UTF_8);
+		System.out.println(data11);
 
 		final SeekableByteChannel channel = binaryStream.getChannel();
 
-		channel.write(ByteBuffer.wrap("hello world 2".getBytes()));
+		ByteBuffer data2 = ByteBuffer.wrap("hello world 2".getBytes(StandardCharsets.UTF_8));
+		channel.write(data2);
 		System.out.println("size: " + channel.size());
 
 		// MEMO: important to reset position
@@ -89,7 +93,22 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final byte[] bytesRead = new byte[(int) channel.size()];
 		final int read = channel.read(ByteBuffer.wrap(bytesRead));
 		System.out.println("read: " + read);
-		System.out.println(new String(bytesRead));
+		System.out.println(new String(bytesRead, StandardCharsets.UTF_8));
 	}
 
+	@Test
+	public void testGeospatialHolder() {
+
+		final String key = RedisUtil.getKey("luke.test", "geospatialHolder", "key");
+
+		final RGeo<Object> geo = client.getGeo(key + ":1");
+
+		final String geoMemberName = "Palermo";
+
+		geo.add(13.361389, 38.115556, geoMemberName);
+
+		final Map<Object, GeoPosition> pos = geo.pos(geoMemberName);
+
+		System.out.println(pos);
+	}
 }
