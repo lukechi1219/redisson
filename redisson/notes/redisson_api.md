@@ -25,11 +25,30 @@ Redisson supports connections to the following Redis configurations:
 
 # Objects
 
-## ObjectHolder
+- These distributed objects follow specifications from the java.util.concurrent.atomic package. They support lock-free,
+  thread-safe and atomic operations on objects stored in Redis.
+- .
+-
+
+## RBucket aka ObjectHolder
 
 Represented by the RBucket class, this object can hold any type of object. This object has a maximum size of 512MB
 
+|                 | 6.2.5 |                    | 
+|-----------------|-------|--------------------|
+| getBucket()     | O     |                    | 
+| getBuckets()    | O     |                    | 
+| getJsonBucket() | X     | need enable module | 
+
 ## BinaryStreamHolder
+
+- binaryStream.set( "hello world 1".getBytes() );
+- final byte[] bytes = binaryStream.get();
+- binaryStream.getOutputStream().write( ", hello world 1.1".getBytes() );
+- .
+- final SeekableByteChannel channel = binaryStream.getChannel();
+- channel.write( ByteBuffer.wrap("hello world 2".getBytes()) );
+- final int read = channel.read( ByteBuffer.wrap(byteArray) );
 
 ## GeospatialHolder
 
@@ -80,6 +99,8 @@ public class Demo {
 ## BloomFilter
 
 ## HyperLogLog
+
+.
 
 # Collections
 
