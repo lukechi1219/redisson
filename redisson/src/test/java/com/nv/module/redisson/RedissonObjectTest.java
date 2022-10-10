@@ -64,6 +64,16 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final AtomicInteger result = jsonBucket.get();
 		System.out.println(result.incrementAndGet());
 		 */
+
+		/*
+		 * RExpirable
+		 */
+		testRExpirable(bucketStr1);
+
+		/*
+		 * RObject
+		 */
+		testRObject(bucketStr1);
 	}
 
 	@Test

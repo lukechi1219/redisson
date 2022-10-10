@@ -9,6 +9,7 @@ import java.time.Instant;
 import com.nv.module.redis.RedisClientTest;
 import org.redisson.Redisson;
 import org.redisson.api.RExpirable;
+import org.redisson.api.RObject;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
@@ -63,6 +64,37 @@ public abstract class AbstractRedissonBaseTest {
 			return client;
 
 		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected void testRObject(RObject rObject) throws RuntimeException {
+		try {
+			System.out.println(rObject.getCodec());
+			final String name = rObject.getName();
+			System.out.println(name);
+
+			Thread.sleep(1777);
+			System.out.println("getIdleTime: " + rObject.getIdleTime());
+
+			rObject.rename(name + "_new1");
+			System.out.println("rename ok");
+			rObject.renamenx(name + "_new2");
+			System.out.println("renamenx ok");
+			rObject.rename(name);
+
+			System.out.println("sizeInMemory: " + rObject.sizeInMemory());
+			System.out.println("touch: " + rObject.touch());
+
+			System.out.println("isExists: " + rObject.isExists());
+
+			//		rObject.delete();
+			final boolean unlink = rObject.unlink();
+			System.out.println("unlink: " + unlink);
+
+			System.out.println(rObject.isExists());
+
+		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
 	}

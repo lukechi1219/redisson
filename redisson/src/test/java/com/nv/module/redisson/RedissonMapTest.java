@@ -58,6 +58,11 @@ class RedissonMapTest extends AbstractRedissonBaseTest {
 		 */
 		testRExpirable(map);
 
+		/*
+		 * RObject
+		 */
+		testRObject(map);
+
 		System.out.println("-- end --");
 	}
 
