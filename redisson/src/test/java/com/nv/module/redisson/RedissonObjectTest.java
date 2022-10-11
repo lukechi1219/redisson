@@ -17,6 +17,7 @@ import org.redisson.api.RBitSet;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
 import org.redisson.api.RGeo;
+import org.redisson.api.RPatternTopic;
 import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.StatusListener;
@@ -207,7 +208,9 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		final String channel = RedisUtil.getKey("luke.test", "topic", "key");
 
-		RTopic topic = client.getTopic(channel + ":1");
+		final RTopic topic = client.getTopic(channel + ":1");
+
+		final RPatternTopic patternTopic = client.getPatternTopic(channel + ":*");
 
 		System.out.println(topic.getChannelNames());
 
@@ -235,6 +238,17 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final int listenerId2 = topic.addListener(String.class, (channel1, msg) -> {
 
 			System.out.println("onMessage: " + channel1 + ", " + msg);
+			System.out.println(".");
+		});
+
+		/*
+		PSUBSCRIBE cps:redisson:luke.test:topic:key:*
+		 */
+		patternTopic.addListener(String.class, (pattern, channel12, msg) -> {
+
+			System.out.println("onMessage: pattern " + pattern);
+			System.out.println("onMessage: channel " + channel12);
+			System.out.println("onMessage: msg " + msg);
 			System.out.println(".");
 		});
 
