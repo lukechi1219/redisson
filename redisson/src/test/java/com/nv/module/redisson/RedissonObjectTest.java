@@ -17,7 +17,9 @@ import org.redisson.api.RBitSet;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
 import org.redisson.api.RGeo;
+import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.listener.StatusListener;
 
 public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
@@ -201,7 +203,62 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 	}
 
 	@Test
-	public void testTopic() {
+	public void testTopic() throws InterruptedException {
 
+		final String channel = RedisUtil.getKey("luke.test", "topic", "key");
+
+		RTopic topic = client.getTopic(channel + ":1");
+
+		System.out.println(topic.getChannelNames());
+
+		topic.removeAllListeners();
+
+		/*
+		SUBSCRIBE cps:redisson:luke.test:topic:key:1
+		 */
+		final int listenerId1 = topic.addListener(new StatusListener() {
+
+			@Override
+			public void onSubscribe(String channel) {
+				System.out.println("onSubscribe: " + channel);
+			}
+
+			@Override
+			public void onUnsubscribe(String channel) {
+				System.out.println("onUnsubscribe: " + channel);
+			}
+		});
+
+		/*
+		SUBSCRIBE cps:redisson:luke.test:topic:key:1
+		 */
+		final int listenerId2 = topic.addListener(String.class, (channel1, msg) -> {
+
+			System.out.println("onMessage: " + channel1 + ", " + msg);
+			System.out.println(".");
+		});
+
+		/*
+		PUBSUB NUMSUB cps:redisson:luke.test:topic:key:1
+		 */
+		System.out.println("countSubscribers:" + topic.countSubscribers());
+
+		/*
+		PUBLISH cps:redisson:luke.test:topic:key:1 "hello world"
+		 */
+		topic.publish("hello world");
+
+		System.out.println("countListeners: " + topic.countListeners());
+
+		Thread.sleep(1000);
+
+		topic.removeListener(listenerId1);
+		topic.removeListener(listenerId2);
+
+		Thread.sleep(1000);
+
+		System.out.println("countListeners: " + topic.countListeners());
+
+		System.out.println("done");
 	}
 }
