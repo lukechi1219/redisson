@@ -159,6 +159,20 @@ public class Demo {
 
 ## HyperLogLog
 
+## getTimeSeries
+
+## getRateLimiter
+
+## getCountDownLatch
+
+## getExecutorService
+
+## getRemoteService
+
+## getFunction
+
+## getDoubleAdder
+
 .
 
 # Collections

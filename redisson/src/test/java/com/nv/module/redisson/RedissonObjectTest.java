@@ -15,11 +15,17 @@ import org.redisson.api.RAtomicDouble;
 import org.redisson.api.RAtomicLong;
 import org.redisson.api.RBinaryStream;
 import org.redisson.api.RBitSet;
+import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
+import org.redisson.api.RDoubleAdder;
+import org.redisson.api.RFunction;
 import org.redisson.api.RGeo;
+import org.redisson.api.RHyperLogLog;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RReliableTopic;
+import org.redisson.api.RRemoteService;
+import org.redisson.api.RScheduledExecutorService;
 import org.redisson.api.RShardedTopic;
 import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
@@ -326,4 +332,44 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		shardedTopic.publish("hello shardedTopic");
 	}
+
+	/**
+	 *
+	 */
+	@Test
+	public void testBloomFilter() {
+
+		final String key = RedisUtil.getKey("luke.test", "bloomFilter", "key");
+
+		final RBloomFilter<Object> bloomFilter = client.getBloomFilter(key + ":1");
+
+		final long count = bloomFilter.count();
+	}
+
+	/**
+	 *
+	 */
+	@Test
+	public void testHyperLogLog() {
+
+		final String key = RedisUtil.getKey("luke.test", "hyperLogLog", "key");
+
+		final RHyperLogLog<Object> hyperLogLog = client.getHyperLogLog(key + ":1");
+
+		hyperLogLog.count();
+
+	}
+
+	/*
+		client.getTimeSeries(key + ":1");
+		client.getRateLimiter(key + ":1");
+		client.getCountDownLatch(key + ":1");
+
+		final RScheduledExecutorService executorService = client.getExecutorService(key + ":1");
+		final RRemoteService remoteService = client.getRemoteService();
+
+		final RDoubleAdder doubleAdder = client.getDoubleAdder(key + ":1");
+
+		final RFunction function = client.getFunction();
+	 */
 }
