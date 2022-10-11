@@ -18,6 +18,8 @@ import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
 import org.redisson.api.RGeo;
 import org.redisson.api.RPatternTopic;
+import org.redisson.api.RReliableTopic;
+import org.redisson.api.RShardedTopic;
 import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.StatusListener;
@@ -274,5 +276,47 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		System.out.println("countListeners: " + topic.countListeners());
 
 		System.out.println("done");
+	}
+
+	/**
+	 * 其實是 stream
+	 */
+	@Test
+	public void testReliableTopic() throws InterruptedException {
+
+		final String channel = RedisUtil.getKey("luke.test", "reliableTopic", "key");
+
+		final RReliableTopic reliableTopic = client.getReliableTopic(channel + ":1");
+
+		/*
+		xadd cps:redisson:luke.test:reliableTopic:key:1 * m "hello reliableTopic"
+		 */
+		reliableTopic.publish("hello reliableTopic");
+
+		/*
+		Amount of messages stored in Redis Stream object.
+		 */
+		System.out.println("size: " + reliableTopic.size());
+
+		final String listenerId = reliableTopic.addListener(String.class, (channel1, msg) -> {
+
+			System.out.println("onMessage: " + channel1 + ", " + msg);
+			System.out.println(".");
+		});
+
+		System.out.println(listenerId);
+
+		Thread.sleep(1000);
+
+		reliableTopic.removeListener(listenerId);
+	}
+
+	@Test
+	public void testShardedTopic() {
+
+		final String channel = RedisUtil.getKey("luke.test", "shardedTopic", "key");
+
+		final RShardedTopic shardedTopic = client.getShardedTopic(channel + ":1");
+
 	}
 }
