@@ -311,6 +311,9 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		reliableTopic.removeListener(listenerId);
 	}
 
+	/**
+	 * ERR unknown command `SPUBLISH`
+	 */
 	@Test
 	public void testShardedTopic() {
 
@@ -318,5 +321,6 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		final RShardedTopic shardedTopic = client.getShardedTopic(channel + ":1");
 
+		shardedTopic.publish("hello shardedTopic");
 	}
 }

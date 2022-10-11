@@ -118,6 +118,13 @@ as title
 
 The Topic object supports the Redis' “publish and subscribe” mechanism.
 
+|                                        | 6.2.5 | 7.x | 
+|----------------------------------------|-------|-----|
+| getTopic()                             | O     | O   | 
+| getPatternTopic()                      | O     | O   | 
+| getReliableTopic() <br/> // 其實是 stream | O     | O   | 
+| getShardedTopic()                      | X     | O   |
+
 ```java
 public class Demo {
 
