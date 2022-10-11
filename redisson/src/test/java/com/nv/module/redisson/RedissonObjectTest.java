@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -287,6 +288,8 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final String channel = RedisUtil.getKey("luke.test", "reliableTopic", "key");
 
 		final RReliableTopic reliableTopic = client.getReliableTopic(channel + ":1");
+
+		reliableTopic.expire(Duration.ofMinutes(1L));
 
 		/*
 		xadd cps:redisson:luke.test:reliableTopic:key:1 * m "hello reliableTopic"
