@@ -20,16 +20,21 @@ import org.redisson.api.RBitSet;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
+import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RDoubleAdder;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
 import org.redisson.api.RIdGenerator;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
+import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReliableTopic;
 import org.redisson.api.RShardedTopic;
 import org.redisson.api.RTimeSeries;
 import org.redisson.api.RTopic;
+import org.redisson.api.RateIntervalUnit;
+import org.redisson.api.RateLimiterConfig;
+import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.StatusListener;
 
@@ -515,14 +520,41 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		testRExpirable(idGenerator);
 	}
 
+	/**
+	 *
+	 */
+	@Test
+	public void testRateLimiter() {
+
+		final String key = RedisUtil.getKey("luke.test", "rateLimiter", "key");
+
+		final RRateLimiter rateLimiter = client.getRateLimiter(key + ":1");
+
+		// Initialization required only once.
+		// 5 permits per 2 seconds
+		final boolean result = rateLimiter.trySetRate(RateType.OVERALL, 5, 2, RateIntervalUnit.SECONDS);
+		System.out.println("trySetRate: " + result);
+
+		final RateLimiterConfig config = rateLimiter.getConfig();
+		System.out.println("config: " + config);
+
+		final long availablePermits = rateLimiter.availablePermits();
+		System.out.println("availablePermits: " + availablePermits);
+
+		// blocking
+		rateLimiter.acquire();
+
+		/*
+		 *
+		 */
+		testRExpirable(rateLimiter);
+	}
+
 	/*
-		client.getRateLimiter(key + ":1");
-		client.getCountDownLatch(key + ":1");
+		final RCountDownLatch countDownLatch = client.getCountDownLatch(key + ":1");
 
 		final RScheduledExecutorService executorService = client.getExecutorService(key + ":1");
 		final RRemoteService remoteService = client.getRemoteService();
-
-		final RDoubleAdder doubleAdder = client.getDoubleAdder(key + ":1");
 
 		final RFunction function = client.getFunction();
 	 */

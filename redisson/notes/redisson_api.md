@@ -191,7 +191,12 @@ final long id1 = idGenerator.nextId();
 
 这个类的目的在于实现一些速度限制实现。但是acquire会阻塞线程，而且不保证公平性。
 
-?
+final boolean result = rateLimiter.trySetRate(RateType.OVERALL, 5, 2, RateIntervalUnit.SECONDS);
+
+final long availablePermits = rateLimiter.availablePermits();
+
+// blocking
+rateLimiter.acquire();
 
 ## CountDownLatch
 
