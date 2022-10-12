@@ -114,6 +114,14 @@ as title
 
 as title
 
+## LongAdder
+
+这个类的功能类似于AtomicLong，但是LongAdder的高并发时性能会好很多，非常适合高并发时的计数。（DoubleAdder类似）
+
+## DoubleAdder
+
+这个类的功能类似于AtomicLong，但是LongAdder的高并发时性能会好很多，非常适合高并发时的计数。（DoubleAdder类似）
+
 ## Topic
 
 The Topic object supports the Redis' “publish and subscribe” mechanism.
@@ -155,23 +163,27 @@ public class Demo {
 }
 ```
 
+## TimeSeries
+
+## RateLimiter
+
+这个类的目的在于实现一些速度限制实现。但是acquire会阻塞线程，而且不保证公平性。
+
 ## BloomFilter
 
 ## HyperLogLog
 
-## getTimeSeries
+## CountDownLatch
 
-## getRateLimiter
+## ExecutorService
 
-## getCountDownLatch
+## Function
 
-## getExecutorService
+## RemoteService
 
-## getRemoteService
+## RIdGenerator
 
-## getFunction
-
-## getDoubleAdder
+这个Id生成器生成一般情况下递增的整数值，效率比较高。
 
 .
 

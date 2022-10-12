@@ -10,6 +10,7 @@ import com.nv.module.redis.RedisClientTest;
 import org.redisson.Redisson;
 import org.redisson.api.RExpirable;
 import org.redisson.api.RObject;
+import org.redisson.api.RTimeSeries;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
@@ -110,8 +111,11 @@ public abstract class AbstractRedissonBaseTest {
 		final boolean result = expirable.clearExpire();
 		System.out.println("clearExpire: " + result);
 
-		final boolean expire1 = expirable.expire(oneMinuteLater);
-		System.out.println("expire1: " + expire1);
+		if (!(expirable instanceof RTimeSeries)) {
+
+			final boolean expire1 = expirable.expire(oneMinuteLater);
+			System.out.println("expire1: " + expire1);
+		}
 
 		// XX
 		//		expirable.expireIfSet(oneMinuteLater);

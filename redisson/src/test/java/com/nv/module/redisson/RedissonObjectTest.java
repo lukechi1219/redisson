@@ -19,14 +19,13 @@ import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
 import org.redisson.api.RDoubleAdder;
-import org.redisson.api.RFunction;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
+import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RReliableTopic;
-import org.redisson.api.RRemoteService;
-import org.redisson.api.RScheduledExecutorService;
 import org.redisson.api.RShardedTopic;
+import org.redisson.api.RTimeSeries;
 import org.redisson.api.RTopic;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.StatusListener;
@@ -137,6 +136,42 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		System.out.println(pos);
 	}
 
+	/**
+	 *
+	 */
+	@Test
+	public void testTimeSeries() throws InterruptedException {
+
+		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
+
+		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+
+		timeSeries.add(System.currentTimeMillis(), "1 value");
+
+		Thread.sleep(1000);
+
+		timeSeries.add(System.currentTimeMillis(), "2 value");
+
+		timeSeries.stream().forEach(value -> {
+			System.out.println(value);
+		});
+
+		final long end = System.currentTimeMillis();
+
+		timeSeries.entryRange(end - 60000, end).forEach(entry -> {
+			System.out.println(entry);
+		});
+
+		System.out.println("---");
+
+		/*
+		 *
+		 */
+		testRExpirable(timeSeries);
+
+		System.out.println("-- end --");
+	}
+
 	@Test
 	public void testBitSet() {
 
@@ -210,6 +245,29 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		// DECRBY + convertor
 		final double doubleVal4 = atomicDouble.getAndDecrement();
 		System.out.println("doubleVal4: " + doubleVal4);
+	}
+
+	/**
+	 * LongAdder
+	 * 这个类的功能类似于AtomicLong，但是LongAdder的高并发时性能会好很多，非常适合高并发时的计数。（DoubleAdder类似）
+	 * <p>
+	 * 底層是 RTopic
+	 */
+	@Test
+	public void testAdder() {
+
+		final String key1 = RedisUtil.getKey("luke.test", "longAdder", "key");
+		final String key2 = RedisUtil.getKey("luke.test", "doubleAdder", "key");
+
+		final RLongAdder longAdder = client.getLongAdder(key1 + ":1");
+		longAdder.increment();
+		final long sumLong = longAdder.sum();
+		System.out.println("sumLong: " + sumLong);
+
+		final RDoubleAdder doubleAdder = client.getDoubleAdder(key2 + ":1");
+		doubleAdder.increment();
+		final double sumDouble = doubleAdder.sum();
+		System.out.println("sumDouble: " + sumDouble);
 	}
 
 	@Test
@@ -361,7 +419,6 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 	}
 
 	/*
-		client.getTimeSeries(key + ":1");
 		client.getRateLimiter(key + ":1");
 		client.getCountDownLatch(key + ":1");
 
