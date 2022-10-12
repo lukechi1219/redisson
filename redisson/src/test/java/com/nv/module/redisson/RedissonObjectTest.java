@@ -6,6 +6,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nv.util.RedisUtil;
@@ -21,6 +23,7 @@ import org.redisson.api.RBuckets;
 import org.redisson.api.RDoubleAdder;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
+import org.redisson.api.RIdGenerator;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RReliableTopic;
@@ -399,23 +402,117 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "bloomFilter", "key");
 
-		final RBloomFilter<Object> bloomFilter = client.getBloomFilter(key + ":1");
+		final RBloomFilter<String> bloomFilter = client.getBloomFilter(key + ":1");
+
+		bloomFilter.tryInit(16, 0.03);
+
+		bloomFilter.add("hello");
 
 		final long count = bloomFilter.count();
+		System.out.println("count: " + count);
+
+		final boolean contains = bloomFilter.contains("hello");
+		System.out.println("contains: " + contains);
+
+		/*
+		 *
+		 */
+		testRExpirable(bloomFilter);
 	}
 
 	/**
-	 *
+	 * PFADD
+	 * <p>
+	 * <a href="https://iter01.com/678217.html">...</a>
+	 * <p>
+	 * 統計一個頁面的每天被多少個不同賬戶訪問量（Unique Visitor，UV）
+	 * <p>
+	 * <a href="https://redis.io/docs/data-types/hyperloglogs/">...</a>
 	 */
 	@Test
 	public void testHyperLogLog() {
 
 		final String key = RedisUtil.getKey("luke.test", "hyperLogLog", "key");
 
-		final RHyperLogLog<Object> hyperLogLog = client.getHyperLogLog(key + ":1");
+		final RHyperLogLog<String> hyperLogLog = client.getHyperLogLog(key + ":1");
 
-		hyperLogLog.count();
+		hyperLogLog.add("hello 1");
+		hyperLogLog.add("hello 2");
+		hyperLogLog.add("hello 1");
+		hyperLogLog.add("hello 3");
 
+		final long count = hyperLogLog.count();
+		System.out.println("count: " + count);
+
+		/*
+		 *
+		 */
+		testRExpirable(hyperLogLog);
+	}
+
+	/**
+	 * setnx
+	 * <p>
+	 * Redis Setnx（SET if Not eXists） 命令在指定的 key 不存在时，为 key 设置指定的值
+	 */
+	@Test
+	public void testIdGenerator() throws InterruptedException {
+
+		final String key = RedisUtil.getKey("luke.test", "idGenerator", "key");
+
+		final RIdGenerator idGenerator = client.getIdGenerator(key + ":1");
+
+		final AtomicInteger atomicInteger = new AtomicInteger(0);
+
+		final Runnable runnable = () -> {
+
+			final int idx = atomicInteger.incrementAndGet();
+
+			final boolean result = idGenerator.tryInit(1L, 10L);
+			System.out.println(idx + " tryInit: " + result);
+
+			final long id1 = idGenerator.nextId();
+			System.out.println(idx + " 1 nextId: " + id1);
+
+			final long id2 = idGenerator.nextId();
+			System.out.println(idx + " 2 nextId: " + id2);
+
+			final long id3 = idGenerator.nextId();
+			System.out.println("3 nextId: " + id3);
+
+			final long id4 = idGenerator.nextId();
+			System.out.println("4 nextId: " + id4);
+			final long id5 = idGenerator.nextId();
+			System.out.println("5 nextId: " + id5);
+			final long id6 = idGenerator.nextId();
+			System.out.println("6 nextId: " + id6);
+			final long id7 = idGenerator.nextId();
+			System.out.println("7 nextId: " + id7);
+			final long id8 = idGenerator.nextId();
+			System.out.println("8 nextId: " + id8);
+			final long id9 = idGenerator.nextId();
+			System.out.println("9 nextId: " + id9);
+
+			final long id10 = idGenerator.nextId();
+			System.out.println(idx + " 10 nextId: " + id10);
+
+			//			final long id11 = idGenerator.nextId();
+			//			System.out.println("nextId: " + id11);
+		};
+
+		ExecutorService executorService = Executors.newFixedThreadPool(1);
+		//		ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+		executorService.execute(runnable);
+
+		executorService.execute(runnable);
+
+		Thread.sleep(10000);
+
+		/*
+		 *
+		 */
+		testRExpirable(idGenerator);
 	}
 
 	/*

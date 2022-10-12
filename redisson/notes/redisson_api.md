@@ -165,13 +165,33 @@ public class Demo {
 
 ## TimeSeries
 
+timeSeries.add( System.currentTimeMillis() , "1 value" );
+
+## BloomFilter
+
+bloomFilter.tryInit(1000, 0.03);
+
+bloomFilter.add("hello");
+
+final boolean contains = bloomFilter.contains("hello");
+
+## HyperLogLog
+
+統計一個頁面的每天被多少個不同賬戶訪問量（Unique Visitor，UV）
+
+## RIdGenerator
+
+这个Id生成器生成一般情况下递增的整数值，效率比较高。
+
+final boolean result = idGenerator.tryInit(1L, 10L);
+
+final long id1 = idGenerator.nextId();
+
 ## RateLimiter
 
 这个类的目的在于实现一些速度限制实现。但是acquire会阻塞线程，而且不保证公平性。
 
-## BloomFilter
-
-## HyperLogLog
+?
 
 ## CountDownLatch
 
@@ -180,10 +200,6 @@ public class Demo {
 ## Function
 
 ## RemoteService
-
-## RIdGenerator
-
-这个Id生成器生成一般情况下递增的整数值，效率比较高。
 
 .
 
