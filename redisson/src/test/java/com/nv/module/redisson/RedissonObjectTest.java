@@ -30,6 +30,7 @@ import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReliableTopic;
+import org.redisson.api.RScheduledExecutorService;
 import org.redisson.api.RShardedTopic;
 import org.redisson.api.RTimeSeries;
 import org.redisson.api.RTopic;
@@ -582,9 +583,24 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		//		testRExpirable(countDownLatch);
 	}
 
-	/*
+	/**
+	 *
+	 */
+	@Test
+	public void testExecutorService() {
+
+		final String key = RedisUtil.getKey("luke.test", "executorService", "key");
 
 		final RScheduledExecutorService executorService = client.getExecutorService(key + ":1");
+
+		final int taskCount = executorService.getTaskCount();
+		System.out.println("taskCount: " + taskCount);
+
+	}
+
+
+	/*
+
 
 		final RRemoteService remoteService = client.getRemoteService();
 
