@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nv.util.RedisUtil;
@@ -550,12 +551,54 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		testRExpirable(rateLimiter);
 	}
 
-	/*
+	/**
+	 *
+	 */
+	@Test
+	public void testCountDownLatch() throws InterruptedException {
+
+		final String key = RedisUtil.getKey("luke.test", "countDownLatch", "key");
+
 		final RCountDownLatch countDownLatch = client.getCountDownLatch(key + ":1");
 
+		final boolean result = countDownLatch.trySetCount(1);
+		System.out.println("trySetCount: " + result);
+
+		final long count = countDownLatch.getCount();
+		System.out.println("count: " + count);
+
+		countDownLatch.countDown();
+
+		// block
+		final boolean await = countDownLatch.await(60, TimeUnit.SECONDS);
+		System.out.println("await: " + await);
+
+		final boolean delete = countDownLatch.delete();
+		System.out.println("delete: " + delete);
+
+		/*
+		 *
+		 */
+		//		testRExpirable(countDownLatch);
+	}
+
+	/*
+
 		final RScheduledExecutorService executorService = client.getExecutorService(key + ":1");
+
 		final RRemoteService remoteService = client.getRemoteService();
 
 		final RFunction function = client.getFunction();
+
+		final RLock lock = client.getLock("lock");
+
+		final RSemaphore semaphore = client.getSemaphore("semaphore");
+
+		final RBatch batch = client.createBatch(BatchOptions.defaults());
+
+		final RTransaction transaction = client.createTransaction(TransactionOptions.defaults());
+
+		final RScript script = client.getScript();
+
 	 */
 }
