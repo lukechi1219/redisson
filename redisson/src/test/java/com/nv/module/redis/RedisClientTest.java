@@ -1,16 +1,23 @@
 package com.nv.module.redis;
 
 import java.sql.Timestamp;
+import java.util.concurrent.TimeUnit;
 
 import com.nv.module.redisson.AbstractRedissonBaseTest;
 import com.nv.util.RedisUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.ExpiredObjectListener;
 import org.redisson.api.LocalCachedMapOptions;
+import org.redisson.api.RBucket;
+import org.redisson.api.RFuture;
 import org.redisson.api.RList;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RQueue;
+import org.redisson.api.RStream;
+import org.redisson.api.StreamMessageId;
+import org.redisson.api.stream.StreamAddArgs;
 import org.redisson.client.codec.Codec;
 import org.redisson.config.Config;
 
@@ -29,7 +36,7 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 	 *
 	 */
 	@Test
-	public void test() {
+	public void test() throws InterruptedException {
 
 		//		System.out.println("test");
 
@@ -41,7 +48,17 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test");
 
-		getClient().<String>getBucket(key).set("test");
+		final RBucket<String> bucket = getClient().getBucket(key);
+
+		bucket.addListener((ExpiredObjectListener) name -> System.out.println("ExpiredObjectListener: " + name));
+
+		bucket.set("test", 10L, TimeUnit.SECONDS);
+		//		bucket.set("test");
+		//		bucket.expire(Duration.ofSeconds(10L));
+
+		Thread.sleep(15000L);
+
+		System.out.println("test end");
 	}
 
 	@Test
@@ -114,5 +131,26 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 
 		System.out.println(".");
 		map.get("key1");
+	}
+
+	@Test
+	public void testStream() {
+
+		final String key = RedisUtil.getKey("luke.test.stream", "strStream");
+
+		final RStream<String, String> stream = getClient().getStream(key);
+
+		final boolean noneMatch = stream.listGroups()
+			.stream()
+			.noneMatch(group -> group.getName().equals("group"));
+
+		if (noneMatch) {
+			stream.createGroup("group");
+		}
+
+		final RFuture<StreamMessageId> streamMessageIdRFuture = stream.addAsync(
+			StreamAddArgs.entry("key", "value"));
+
+		streamMessageIdRFuture.thenAccept(System.out::println);
 	}
 }
