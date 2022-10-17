@@ -1,12 +1,16 @@
 package com.nv.module.redisson;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import com.nv.util.RedisUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
 import org.redisson.api.LocalCachedMapOptions;
+import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RMap;
 import org.redisson.api.RMapCache;
@@ -23,69 +27,96 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 	 */
 	private void testRMap(RMap<String, Integer> map) {
 
-		map.put("key1", 1);
+		final String key1 = "key1";
+		final int value1 = 1;
 
-		final Integer value1Str = map.get("key1");
-		System.out.println("value1Str: " + value1Str);
+		HashMap<String, Integer> mapTemp = new HashMap<>();
+
+		for (int i = 1; i <= 1000; i++) {
+			mapTemp.put("key" + i, i);
+		}
+
+		// split 1000 entries into 10 batches
+		map.putAll(mapTemp, 100);
+
+		final Integer value1Int = map.get(key1);
+		Assertions.assertEquals(value1, value1Int);
+
+		// HSCAN entries with each batch size equals to 100
+		final Set<Map.Entry<String, Integer>> entries1 = map.entrySet(100);
+
+		for (Map.Entry<String, Integer> entry : entries1) {
+			System.out.println(entry.getKey() + " = " + entry.getValue());
+		}
+		// size() -> HLEN
+		Assertions.assertEquals(1000, entries1.size());
 
 		final Set<Map.Entry<String, Integer>> entries = map.readAllEntrySet();
-		final Set<Map.Entry<String, Integer>> entries1 = map.entrySet();
+		Assertions.assertEquals(1000, entries.size());
 
-		final Set<String> keys = map.readAllKeySet();
+		for (Map.Entry<String, Integer> entry : entries) {
+			System.out.println(entry.getKey() + " = " + entry.getValue());
+		}
+
 		final Set<String> keys1 = map.keySet();
+		final Set<String> keys = map.readAllKeySet();
 
-		final Collection<Integer> values = map.readAllValues();
 		final Collection<Integer> values1 = map.values();
+		final Collection<Integer> values = map.readAllValues();
 
 		final Map<String, Integer> maps = map.readAllMap();
 
-		map.addAndGet("key1", 1);
+		final Integer value2 = map.addAndGet(key1, 1);
+		Assertions.assertEquals(value1 + 1, value2);
 
-		final boolean containsKey = map.containsKey("key1");
-		System.out.println("containsKey: " + containsKey);
+		final boolean containsKey = map.containsKey(key1);
+		Assertions.assertTrue(containsKey);
 
-		final boolean containsValue = map.containsValue("value1");
-		System.out.println("containsValue: " + containsValue);
+		final boolean containsValue = map.containsValue(value1 + 1);
+		Assertions.assertTrue(containsValue);
 
 		map.fastPutIfAbsent("key2", 2);
 
 		map.fastPutIfExists("key2", 3);
 
-		map.putIfAbsent("", 4);
+		map.putIfAbsent("key4", 4);
 
-		map.putIfExists("", 5);
+		map.putIfExists("key5", 5);
 
-		map.compute("key1", (key, value) -> {
+		map.compute(key1, (key, value) -> {
 			return value;
 		});
 
-		map.computeIfAbsent("key1", (key) -> {
+		map.computeIfAbsent(key1, (key) -> {
 			return 1;
 		});
 
-		map.computeIfPresent("key1", (key, value) -> {
+		map.computeIfPresent(key1, (key, value) -> {
 			return value;
 		});
 
-		map.getCountDownLatch("key1");
+		final RCountDownLatch countDownLatch = map.getCountDownLatch(key1);
+		final long count = countDownLatch.getCount();
+		System.out.println("count = " + count);
 
-		map.getLock("key1");
+		map.getLock(key1);
 
-		map.getFairLock("key1");
+		map.getFairLock(key1);
 
-		map.getReadWriteLock("key1");
+		map.getReadWriteLock(key1);
 
-		map.getSemaphore("key1");
+		map.getSemaphore(key1);
 
-		map.getPermitExpirableSemaphore("key1");
+		map.getPermitExpirableSemaphore(key1);
 
-		map.valueSize("key1");
+		final int valueSize = map.valueSize(key1);
+		System.out.println("valueSize = " + valueSize);
 
-		map.remove("key1");
+		map.remove(key1);
 
-		map.replace("key1", 1);
+		map.replace(key1, 1);
 
-		map.replace("key1", 1, 2);
+		map.replace(key1, 1, 2);
 
 		final RMapReduce<String, Integer, String, Integer> mapReduce = map.mapReduce();
 
@@ -122,7 +153,6 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final RMapCache<String, Integer> mapCache = client.getMapCache(key + ":1");
 
-
 		System.out.println("---");
 
 		/*
@@ -146,8 +176,6 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final RLocalCachedMap<String, Integer> localCachedMap = client.getLocalCachedMap(key + ":1",
 			LocalCachedMapOptions.defaults());
-
-
 
 		System.out.println("---");
 
