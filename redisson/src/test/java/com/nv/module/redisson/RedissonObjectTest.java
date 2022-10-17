@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.nv.util.RedisUtil;
@@ -21,7 +20,6 @@ import org.redisson.api.RBitSet;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
-import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RDoubleAdder;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
@@ -30,9 +28,7 @@ import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReliableTopic;
-import org.redisson.api.RScheduledExecutorService;
 import org.redisson.api.RShardedTopic;
-import org.redisson.api.RTimeSeries;
 import org.redisson.api.RTopic;
 import org.redisson.api.RateIntervalUnit;
 import org.redisson.api.RateLimiterConfig;
@@ -144,42 +140,6 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final Map<Object, GeoPosition> pos = geo.pos(geoMemberName);
 
 		System.out.println(pos);
-	}
-
-	/**
-	 *
-	 */
-	@Test
-	public void testTimeSeries() throws InterruptedException {
-
-		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
-
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
-
-		timeSeries.add(System.currentTimeMillis(), "1 value");
-
-		Thread.sleep(1000);
-
-		timeSeries.add(System.currentTimeMillis(), "2 value");
-
-		timeSeries.stream().forEach(value -> {
-			System.out.println(value);
-		});
-
-		final long end = System.currentTimeMillis();
-
-		timeSeries.entryRange(end - 60000, end).forEach(entry -> {
-			System.out.println(entry);
-		});
-
-		System.out.println("---");
-
-		/*
-		 *
-		 */
-		testRExpirable(timeSeries);
-
-		System.out.println("-- end --");
 	}
 
 	@Test
@@ -458,6 +418,36 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 	}
 
 	/**
+	 * TODO: study more on this
+	 */
+	@Test
+	public void testRateLimiter() {
+
+		final String key = RedisUtil.getKey("luke.test", "rateLimiter", "key");
+
+		final RRateLimiter rateLimiter = client.getRateLimiter(key + ":1");
+
+		// Initialization required only once.
+		// 5 permits per 2 seconds
+		final boolean result = rateLimiter.trySetRate(RateType.OVERALL, 5, 2, RateIntervalUnit.SECONDS);
+		System.out.println("trySetRate: " + result);
+
+		final RateLimiterConfig config = rateLimiter.getConfig();
+		System.out.println("config: " + config);
+
+		final long availablePermits = rateLimiter.availablePermits();
+		System.out.println("availablePermits: " + availablePermits);
+
+		// blocking
+		rateLimiter.acquire();
+
+		/*
+		 *
+		 */
+		testRExpirable(rateLimiter);
+	}
+
+	/**
 	 * setnx
 	 * <p>
 	 * Redis Setnx（SET if Not eXists） 命令在指定的 key 不存在时，为 key 设置指定的值
@@ -521,100 +511,4 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		 */
 		testRExpirable(idGenerator);
 	}
-
-	/**
-	 *
-	 */
-	@Test
-	public void testRateLimiter() {
-
-		final String key = RedisUtil.getKey("luke.test", "rateLimiter", "key");
-
-		final RRateLimiter rateLimiter = client.getRateLimiter(key + ":1");
-
-		// Initialization required only once.
-		// 5 permits per 2 seconds
-		final boolean result = rateLimiter.trySetRate(RateType.OVERALL, 5, 2, RateIntervalUnit.SECONDS);
-		System.out.println("trySetRate: " + result);
-
-		final RateLimiterConfig config = rateLimiter.getConfig();
-		System.out.println("config: " + config);
-
-		final long availablePermits = rateLimiter.availablePermits();
-		System.out.println("availablePermits: " + availablePermits);
-
-		// blocking
-		rateLimiter.acquire();
-
-		/*
-		 *
-		 */
-		testRExpirable(rateLimiter);
-	}
-
-	/**
-	 *
-	 */
-	@Test
-	public void testCountDownLatch() throws InterruptedException {
-
-		final String key = RedisUtil.getKey("luke.test", "countDownLatch", "key");
-
-		final RCountDownLatch countDownLatch = client.getCountDownLatch(key + ":1");
-
-		final boolean result = countDownLatch.trySetCount(1);
-		System.out.println("trySetCount: " + result);
-
-		final long count = countDownLatch.getCount();
-		System.out.println("count: " + count);
-
-		countDownLatch.countDown();
-
-		// block
-		final boolean await = countDownLatch.await(60, TimeUnit.SECONDS);
-		System.out.println("await: " + await);
-
-		final boolean delete = countDownLatch.delete();
-		System.out.println("delete: " + delete);
-
-		/*
-		 *
-		 */
-		//		testRExpirable(countDownLatch);
-	}
-
-	/**
-	 *
-	 */
-	@Test
-	public void testExecutorService() {
-
-		final String key = RedisUtil.getKey("luke.test", "executorService", "key");
-
-		final RScheduledExecutorService executorService = client.getExecutorService(key + ":1");
-
-		final int taskCount = executorService.getTaskCount();
-		System.out.println("taskCount: " + taskCount);
-
-	}
-
-
-	/*
-
-
-		final RRemoteService remoteService = client.getRemoteService();
-
-		final RFunction function = client.getFunction();
-
-		final RLock lock = client.getLock("lock");
-
-		final RSemaphore semaphore = client.getSemaphore("semaphore");
-
-		final RBatch batch = client.createBatch(BatchOptions.defaults());
-
-		final RTransaction transaction = client.createTransaction(TransactionOptions.defaults());
-
-		final RScript script = client.getScript();
-
-	 */
 }
