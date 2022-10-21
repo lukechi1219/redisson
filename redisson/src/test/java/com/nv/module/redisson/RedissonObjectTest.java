@@ -1,6 +1,7 @@
 package com.nv.module.redisson;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,7 @@ import org.redisson.api.RateLimiterConfig;
 import org.redisson.api.RateType;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.listener.StatusListener;
+import org.redisson.client.codec.StringCodec;
 
 public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
@@ -91,6 +93,31 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		 * RObject
 		 */
 		testRObject(bucketStr1);
+	}
+
+	@Test
+	public void testBufferedRead() throws IOException {
+
+		final String key = RedisUtil.getKey("luke.test", "binaryStream", "key");
+
+		final RBucket<String> bucket = client.getBucket(key + ":1", new StringCodec());
+		System.out.println(bucket.get());
+
+		final RBinaryStream binaryStream = client.getBinaryStream(key + ":1");
+
+		final InputStream inputStream = binaryStream.getInputStream();
+
+		String data = "";
+		byte[] buffer = new byte[10];
+
+		int read;
+
+		while ((read = inputStream.read(buffer)) != -1) {
+			System.out.println("read: " + read);
+			data += new String(buffer, 0, read, StandardCharsets.UTF_8);
+		}
+
+		System.out.println(data);
 	}
 
 	@Test
