@@ -25,6 +25,7 @@ import org.redisson.api.RDoubleAdder;
 import org.redisson.api.RGeo;
 import org.redisson.api.RHyperLogLog;
 import org.redisson.api.RIdGenerator;
+import org.redisson.api.RLiveObjectService;
 import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RRateLimiter;
@@ -537,5 +538,13 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		 *
 		 */
 		testRExpirable(idGenerator);
+	}
+
+	@Test
+	public void testLiveObject() {
+
+		final String key = RedisUtil.getKey("luke.test", "idGenerator", "key");
+
+		final RLiveObjectService liveObjectService = client.getLiveObjectService();
 	}
 }
