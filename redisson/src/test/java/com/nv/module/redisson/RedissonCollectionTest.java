@@ -14,6 +14,7 @@ import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RMap;
 import org.redisson.api.RMapCache;
+import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RTimeSeries;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.mapreduce.RMapReduce;
@@ -199,6 +200,23 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
 		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+	}
+
+	/**
+	 *
+	 */
+	@Test
+	public void testSortedSet() {
+
+		final String key = RedisUtil.getKey("luke.test", "scoredSortedSet", "key");
+
+		final RScoredSortedSet<String> scoredSortedSet = client.getScoredSortedSet(key + ":1");
+
+		final Double score = scoredSortedSet.getScore("member");
+
+		final Integer rank = scoredSortedSet.rank("member");
+
+		final Collection<String> strings = scoredSortedSet.valueRange(1, 2);
 	}
 
 	/**
