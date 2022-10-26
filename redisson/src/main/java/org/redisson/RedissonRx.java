@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-2021 Nikita Koksharov
+ * Copyright (c) 2013-2022 Nikita Koksharov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -439,17 +439,17 @@ public class RedissonRx implements RedissonRxClient {
     }
 
     @Override
-    public <V> RTimeSeriesRx<V> getTimeSeries(String name) {
-        RTimeSeries<V> timeSeries = new RedissonTimeSeries<V>(evictionScheduler, commandExecutor, name);
+    public <V, L> RTimeSeriesRx<V, L> getTimeSeries(String name) {
+        RTimeSeries<V, L> timeSeries = new RedissonTimeSeries<V, L>(evictionScheduler, commandExecutor, name);
         return RxProxyBuilder.create(commandExecutor, timeSeries,
-                new RedissonTimeSeriesRx<V>(timeSeries, this), RTimeSeriesRx.class);
+                new RedissonTimeSeriesRx<V, L>(timeSeries, this), RTimeSeriesRx.class);
     }
 
     @Override
-    public <V> RTimeSeriesRx<V> getTimeSeries(String name, Codec codec) {
-        RTimeSeries<V> timeSeries = new RedissonTimeSeries<V>(codec, evictionScheduler, commandExecutor, name);
+    public <V, L> RTimeSeriesRx<V, L> getTimeSeries(String name, Codec codec) {
+        RTimeSeries<V, L> timeSeries = new RedissonTimeSeries<V, L>(codec, evictionScheduler, commandExecutor, name);
         return RxProxyBuilder.create(commandExecutor, timeSeries,
-                new RedissonTimeSeriesRx<V>(timeSeries, this), RTimeSeriesRx.class);
+                new RedissonTimeSeriesRx<V, L>(timeSeries, this), RTimeSeriesRx.class);
     }
 
     @Override
