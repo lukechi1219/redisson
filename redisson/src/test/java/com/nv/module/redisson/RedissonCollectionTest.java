@@ -2,6 +2,7 @@ package com.nv.module.redisson;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RCountDownLatch;
+import org.redisson.api.RList;
 import org.redisson.api.RLocalCachedMap;
 import org.redisson.api.RMap;
 import org.redisson.api.RMapCache;
@@ -226,9 +228,22 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 	@Test
 	public void testList() {
 
-		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
+		final String key = RedisUtil.getKey("luke.test", "rlist", "key");
 
-		client.getTimeSeries(key + ":1");
+		final RList<Object> rlist = client.getList(key + ":1");
+
+		for (int i = 0; i < 10; i++) {
+
+			if (i % 2 == 0) {
+				rlist.add(i);
+			} else {
+				rlist.add(String.valueOf(i));
+			}
+		}
+
+		final List<Object> objects = rlist.get(0, 2, 4, 6, 8);
+
+		System.out.println(objects);
 	}
 
 	/**
