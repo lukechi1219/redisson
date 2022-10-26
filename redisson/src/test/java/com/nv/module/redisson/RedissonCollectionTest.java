@@ -199,7 +199,8 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+		final RTimeSeries<Object, Object> timeSeries = client.getTimeSeries(key + ":1");
+
 	}
 
 	/**
@@ -227,7 +228,7 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+		client.getTimeSeries(key + ":1");
 	}
 
 	/**
@@ -238,7 +239,7 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+		client.getTimeSeries(key + ":1");
 	}
 
 	/**
@@ -249,7 +250,7 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+		client.getTimeSeries(key + ":1");
 	}
 
 	/**
@@ -260,7 +261,7 @@ public class RedissonCollectionTest extends AbstractRedissonBaseTest {
 
 		final String key = RedisUtil.getKey("luke.test", "timeSeries", "key");
 
-		final RTimeSeries<String> timeSeries = client.getTimeSeries(key + ":1");
+		final RTimeSeries<String, String> timeSeries = client.getTimeSeries(key + ":1");
 
 		timeSeries.add(System.currentTimeMillis(), "1 value");
 

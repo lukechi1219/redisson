@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +31,7 @@ import org.redisson.api.RLongAdder;
 import org.redisson.api.RPatternTopic;
 import org.redisson.api.RRateLimiter;
 import org.redisson.api.RReliableTopic;
+import org.redisson.api.RScript;
 import org.redisson.api.RShardedTopic;
 import org.redisson.api.RTopic;
 import org.redisson.api.RateIntervalUnit;
@@ -94,6 +96,48 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		 * RObject
 		 */
 		testRObject(bucketStr1);
+	}
+
+	@Test
+	public void testRedissonBucket2() {
+
+		final String key = RedisUtil.getKey("luke.test", "bucket", "key");
+
+		final String redisKey = key + ":object1";
+
+		final RBucket<Object> bucketObj1 = client.getBucket(redisKey);
+
+		bucketObj1.set(10);
+
+		final Object value = bucketObj1.get();
+
+		System.out.println("value: " + value.getClass().getSimpleName());
+
+		final String luaScript = "return redis.call('decr', KEYS[1])";
+
+		//		/*
+		final RScript script = client.getScript();
+
+		for (int i = 1; i <= 10; i++) {
+			try {
+				final Object eval = script.eval(RScript.Mode.READ_WRITE, luaScript, RScript.ReturnType.VALUE,
+					Arrays.asList(new String[] {redisKey}));
+
+				System.out.println(eval);
+
+				if (Integer.parseInt(String.valueOf(eval)) == 0) {
+					bucketObj1.set("sold out");
+
+					final Object newValue = bucketObj1.get();
+					System.out.println("newValue: " + newValue.getClass().getSimpleName());
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+
+			}
+		}
+		/*
+		 */
 	}
 
 	@Test
