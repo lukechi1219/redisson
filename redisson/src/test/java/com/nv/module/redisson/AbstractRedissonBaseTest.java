@@ -6,7 +6,6 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 
-import com.nv.module.redis.RedisClientTest;
 import org.redisson.Redisson;
 import org.redisson.api.RExpirable;
 import org.redisson.api.RObject;
@@ -39,7 +38,7 @@ public abstract class AbstractRedissonBaseTest {
 
 				final Config config;
 
-				final URL url = RedisClientTest.class.getClassLoader().getResource("properties/" + fileName);
+				final URL url = AbstractRedissonBaseTest.class.getClassLoader().getResource("properties/" + fileName);
 
 				if (url == null) {
 					//	throw new RuntimeException("File not found: " + fileName);
