@@ -115,7 +115,6 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 		final String luaScript = "return redis.call('decr', KEYS[1])";
 
-		//		/*
 		final RScript script = client.getScript();
 
 		for (int i = 1; i <= 10; i++) {
@@ -136,8 +135,6 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 
 			}
 		}
-		/*
-		 */
 	}
 
 	@Test
