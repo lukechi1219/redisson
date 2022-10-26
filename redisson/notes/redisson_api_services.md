@@ -6,9 +6,17 @@
 
 .
 
+## Live Object service
+
+.
+
 ## ExecutorService
 
 ?
+
+.
+
+## Distributed MapReduce service
 
 .
 
