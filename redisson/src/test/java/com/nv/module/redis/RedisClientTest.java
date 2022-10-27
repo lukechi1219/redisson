@@ -50,7 +50,10 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 
 		final RBucket<String> bucket = getClient().getBucket(key);
 
-		bucket.addListener((ExpiredObjectListener) name -> System.out.println("ExpiredObjectListener: " + name));
+		bucket.addListener((ExpiredObjectListener) name -> {
+			System.out.println("bucket expired");
+			System.out.println("ExpiredObjectListener: " + name);
+		});
 
 		bucket.set("test", 10L, TimeUnit.SECONDS);
 		//		bucket.set("test");
