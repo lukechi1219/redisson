@@ -1,5 +1,6 @@
 package com.nv.module.redis;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Map;
 
@@ -78,9 +79,9 @@ public class RedisBasicTest extends AbstractRedissonBaseTest {
 		private long uid;
 		private String name;
 
-		public Account() {
-			this(0L, "");
-		}
+		//		public Account() {
+		//			this(0L, "");
+		//		}
 
 		public Account(long uid, String name) {
 			this.uid = uid;
@@ -107,5 +108,39 @@ public class RedisBasicTest extends AbstractRedissonBaseTest {
 		public String toString() {
 			return "Account [uid=" + uid + ", name=" + name + "]";
 		}
+	}
+
+	@Test
+	public void testUnlink() {
+
+		final String key = "cps:luke:test:unlink:key";
+		final RBucket<String> bucket = getClient().getBucket(key);
+
+		bucket.set("test unlink key");
+
+		final String data = bucket.get();
+		System.out.println("data: " + data);
+
+		final boolean unlink = bucket.unlink();
+		System.out.println("unlink success: " + unlink);
+
+		final String data2 = bucket.get();
+		System.out.println("data2: " + data2);
+	}
+
+	@Test
+	public void testTimestamp() {
+
+		final String key = "cps:luke:test:timestamp:key";
+		final RBucket<Timestamp> bucket = getClient().getBucket(key);
+
+		bucket.set(new Timestamp(System.currentTimeMillis()));
+
+		final Timestamp timestamp = bucket.get();
+		System.out.println("timestamp: " + timestamp);
+
+		System.out.println(timestamp.getTime());
+
+		System.out.println(timestamp.getNanos());
 	}
 }
