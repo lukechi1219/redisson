@@ -1,5 +1,9 @@
 # Redis 數據類型
 
+https://try.redis.io/
+
+https://medium.com/analytics-vidhya/the-most-important-redis-data-structures-you-must-understand-2e95b5cf2bce
+
 https://redis.io/docs/data-types/
 
 https://redis.io/docs/data-types/tutorial/
@@ -8,23 +12,44 @@ https://redis.io/docs/data-types/tutorial/
 
 Redis 數據類型 : Redis支持的數據類型概述
 
-Redis 是一個 數據結構 server。Redis 的核心是提供一組原生數據類型，可幫助您解決從緩存到 queuing 再到事件處理 (event
-processing) 的各種問題。下面是每種數據類型的簡短描述，以及更廣泛的概述和命令參考的鏈接。
+- Redis 是一個 數據結構 server。
+- Redis 的核心是提供一組原生數據類型，可幫助您解決從緩存到 queuing 再到 事件處理 (event processing) 的各種問題。
+- Redis 的效能，取決於不同指令的複雜度
+  - O(1)
+  - O(n)
+  - O(log(N))
+  - .
+- .
 
-如果您想嘗試綜合教程，請參閱 Redis 數據類型教程 https://redis.io/docs/data-types/tutorial/。
+.
 
 - Core
 - .
   - strings
-  - Redis strings 是最基本的 Redis 數據類型，代表一個 sequence of bytes。有關詳細信息，請參閱 Redis strings 概述：
+  - Redis strings 是最基本的 Redis 數據類型，代表一個 sequence of bytes。
+  - 由於 Redis key 是 strings，當我們也使用 strings 類型作為值時，我們是將一個 strings 映射到另一個 strings。
+  - strings 數據類型可用於許多 use case，例如 緩存 HTML 片段 or 頁面 or jpeg 圖像 (而不用直接讀取硬碟)。
     - .
-    - Redis strings 儲存 sequences of bytes, 包括 text, serialized objects, and binary arrays. 因此, strings 是最基本的
-      Redis data type. 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
+    - Redis strings 儲存 sequences of bytes, 包括 text, serialized objects, and binary arrays. 因此, strings 是最基本的 Redis data type. 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
     - .
-    - 例子
-      - SET user:1 salvatore
-      - SET ticket:27 "\"{'username': 'priya', 'ticket_id': 321}\"" EX 100
-      - .
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| SET user:1 salvatore                                               |     |     |
+| SET ticket:27 "\"{'username': 'priya', 'ticket_id': 321}\"" EX 100 |     |     |
+| INCR views:page:2                                                  |     |     |
+| INCRBY views:page:2 10                                             |     |     |
+| set mykey newval                                                   |     |     |
+| getset mykey newval2                                               |     |     |
+| get mykey                                                          |     |     |
+| set mykey 100                                                      |     |     |
+| type mykey                                                         |     |     |
+|                                                                    |     |     |
+|                                                                    |     |     |
+
+- . 
+  - .
+    - .
     - 增加一個計數器
       - INCR views:page:2
       - INCRBY views:page:2 10
@@ -34,13 +59,23 @@ processing) 的各種問題。下面是每種數據類型的簡短描述，以�
       - 實務上，Redis strings 最好維持在 10KB 以下
         - 最省空間的長度是 44 bytes 以內
       - .
-    - Getting Strings
-      - GET retrieves a string value.
-      - MGET retrieves multiple string values in a single operation.
-        -
-          * 實用的技巧
-            -.
+    - Getting, Setting Strings
+      - GET / SET
+      - GETSET
+      - MGET / MSET
+        - 實用的技巧 -> 減少網路延遲
+      - .
+    - 必不可少的 TYPE 命令
+      - set mykey 100
+      - type mykey
+      - incrby mykey 1
+      - type mykey
+      - del mykey
+      - type mykey
+      - get mykey
+      - .
     - Managing counters
+      - 原子增量 atomic increment
       - INCRBY "atomically" increments (and decrements when passing a negative number) counters stored at a given key.
         - INCRBY {key} 10
         - INCRBY {key} -5
@@ -50,16 +85,33 @@ processing) 的各種問題。下面是每種數據類型的簡短描述，以�
       - see the bitmaps data type docs.
       - .
     - Performance
-      - 大多數字符串操作的複雜度為 O(1)，這意味著它們非常高效。
+      - 大多數 strings 操作的 複雜度為 O(1)，這意味著它們非常 高效。
       - 但是，請注意 SUBSTR, GETRANGE, and SETRANGE 命令，它們的複雜度可能為 O(n)。
-      - 這些隨機訪問字符串命令在處理大字符串時可能會導致性能問題。
+      - 這些隨機訪問 strings 命令在處理大 strings 時可能會導致性能問題。
       - .
     - Alternatives
-      - 如果您將結構化數據存儲為序列化字符串，您可能也想要考慮 Redis hashes 或 RedisJSON。
+      - 如果您將結構化數據存儲為序列化 strings，您可能也想要考慮 Redis hashes 或 RedisJSON。
       - .
     - Learn more
-      - Redis 大學的 RU101 詳細介紹了 Redis 字符串。
+      - Redis 大學的 RU101 詳細介紹了 Redis strings。
+      - .
     - .
+  - .
+- .
+- Keys
+  - Redis keys 是 binary safe 的，這意味著您可以使用任何二進制序列作為密鑰，從 “foo” 這樣的 strings 到 JPEG 文件的內容。空字串 "" 也是一個有效的 key。
+  - tbd
+  - .
+- .
+- Key expiration
+  - 在繼續之前，我們應該了解一個重要的 Redis 功能，無論您存儲的值是什麼類型，它都可以 work：Key expiration。Key expiration 允許您為 key 設置 timeout，也稱為 “生存時間 time to live ” 或 “TTL”。
+  - 當過期時間過去時，key 將自動銷毀。
+    - 可以使用 秒 或 毫秒 精度設置它們。
+    - 但是，過期時間 分辨率 始終為 1 毫秒。
+    - 關於過期的信息會被複製並保存在磁盤上，當您的 Redis 服務器保持停止時，時間實際上已經過去了（這意味著 Redis 會保存密鑰過期的日期）。
+  - set mykey 100 ex 100
+  - ttl key
+  - .
 - .
 -
   - lists
