@@ -42,7 +42,7 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 	 *
 	 */
 	@Test
-	public void test() throws InterruptedException {
+	public void testExpiredObjectListener() throws InterruptedException {
 
 		//		System.out.println("test");
 
@@ -64,8 +64,10 @@ public class RedisClientTest extends AbstractRedissonBaseTest {
 		bucket.set("test", 10L, TimeUnit.SECONDS);
 		//		bucket.set("test");
 		//		bucket.expire(Duration.ofSeconds(10L));
+		System.out.println("bucket: " + bucket.get());
 
-		Thread.sleep(15000L);
+		Thread.sleep(10000L);
+		System.out.println("bucket: " + bucket.get());
 
 		System.out.println("test end");
 	}
