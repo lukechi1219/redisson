@@ -13,7 +13,7 @@ https://redis.io/docs/data-types/tutorial/
 Redis 數據類型 : Redis支持的數據類型概述
 
 - Redis 是一個 數據結構 server。
-- Redis 的核心是提供一組原生數據類型，可幫助您解決從緩存到 queuing 再到 事件處理 (event processing) 的各種問題。
+- Redis 的核心, 是提供一群 原生數據類型，可幫助您解決從 緩存 到 queuing 再到 事件處理 (event processing) 的各種問題。
 - Redis 的效能，取決於不同指令的複雜度
   - O(1)
   - O(n)
@@ -26,11 +26,13 @@ Redis 數據類型 : Redis支持的數據類型概述
 - Core
 - .
   - strings
-  - Redis strings 是最基本的 Redis 數據類型，代表一個 sequence of bytes。
+  - Redis strings 是最基本的 Redis 數據類型，代表一串 sequence of bytes (010101010101....)。
   - 由於 Redis key 是 strings，當我們也使用 strings 類型作為值時，我們是將一個 strings 映射到另一個 strings。
   - strings 數據類型可用於許多 use case，例如 緩存 HTML 片段 or 頁面 or jpeg 圖像 (而不用直接讀取硬碟)。
     - .
-    - Redis strings 儲存 sequences of bytes, 包括 text, serialized objects, and binary arrays. 因此, strings 是最基本的 Redis data type. 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
+    - Redis strings 儲存 sequences of bytes, 包括 text, serialized objects, and binary arrays.
+    - 因此, strings 是最基本的 Redis data type.
+    - 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
     - .
 
 | command                                                            |     |     |
@@ -99,8 +101,15 @@ Redis 數據類型 : Redis支持的數據類型概述
   - .
 - .
 - Keys
-  - Redis keys 是 binary safe 的，這意味著您可以使用任何二進制序列作為密鑰，從 “foo” 這樣的 strings 到 JPEG 文件的內容。空字串 "" 也是一個有效的 key。
-  - tbd
+  - Redis keys 是 binary safe 的，這意味著您可以使用任何二進制序列作為密鑰，從 “foo” 這樣的 strings 到 JPEG
+    文件的內容。空字串 "" 也是一個有效的 key。
+  - 很長的鍵不是一個好主意。例如，1024 字節的鍵不僅在內存方面是個壞主意，而且因為在數據集中查找鍵可能需要多次代價高昂的鍵比較。
+  - 非常短的鍵通常不是一個好主意。如果您可以寫成“user:1000:followers”，那麼將“u1000flw”寫成鍵就沒什麼意義了。後者更具可讀性。
+  - 訂出屬於我們自己的規範:
+    - “object-type:id”是個好主意
+    - user:1000
+    - comment:4321:reply.to 或 comment:4321:reply-to 是兩種不同的命名規範
+    - .
   - .
 - .
 - Key expiration
