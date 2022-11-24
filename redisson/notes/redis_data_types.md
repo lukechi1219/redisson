@@ -14,6 +14,42 @@ Redis 數據類型 : Redis支持的數據類型概述
 
 - Redis 是一個 數據結構 server。
 - Redis 的核心, 是提供一群 原生數據類型，可幫助您解決從 緩存 到 queuing 再到 事件處理 (event processing) 的各種問題。
+  - basic
+    - Strings
+    - Lists
+    - Sets
+    - Hashes
+    - Sorted Sets
+    - .
+  - advanced
+    - Streams
+    - .
+  - other
+    - Geospatial indexes
+    - Bitmaps
+    - Bitfields
+    - HyperLogLog
+    - .
+  - Extensions 擴充模組
+    - Lua scripting
+    - modules API
+    - Redis Stack
+      - RedisJSON
+        - 支援 JSONPath 直接操作 JSON documents 資料
+      - RediSearch
+        - Queries, 二級索引 secondary indexing, and full-text search for Redis
+        - index and query JSON documents
+      - RedisTimeSeries
+        - 時間序列資料
+      - RedisGraph
+        - Resource management (supply chain)
+        - 誰是我朋友 A 的朋友，誰也是 B 的朋友？
+        - 其他用戶與該用戶剛剛添加到購物車的產品一起購買了哪些產品？
+        - 欺詐識別
+      - 機率資料結構 Probabilistic data structures
+        - 檢查用戶名是否被佔用（SaaS、內容髮布平台）
+      - .
+  - .
 - Redis 的效能，取決於不同指令的複雜度
   - O(1)
   - O(n)
@@ -34,9 +70,17 @@ Redis 數據類型 : Redis支持的數據類型概述
     - 因此, strings 是最基本的 Redis data type.
     - 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
     - .
+    - 實務上，Redis strings 最好維持在 10KB 以下 -> alibaba redis 開發規範
+    - .
+    - 如果要將 結構化資料 存儲為 序列化字符串，您可能可以需要考慮 Redis hashes 或 RedisJSON
+    - .
 
 | command                                                            |     |     |
 |--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+| set mykey 12345678901234567890                                     |     |     |
+| set mykey 9223372036854775807 (2 power 63 -1)                      |     |     |
 | SET user:1 salvatore                                               |     |     |
 | SET ticket:27 "\"{'username': 'priya', 'ticket_id': 321}\"" EX 100 |     |     |
 | INCR views:page:2                                                  |     |     |
@@ -46,7 +90,9 @@ Redis 數據類型 : Redis支持的數據類型概述
 | get mykey                                                          |     |     |
 | set mykey 100                                                      |     |     |
 | type mykey                                                         |     |     |
-|                                                                    |     |     |
+| .                                                                  |     |     |
+| set mykey newval nx                                                |     |     |
+| set mykey newval xx                                                |     |     |
 |                                                                    |     |     |
 
 - . 
@@ -113,16 +159,26 @@ Redis 數據類型 : Redis支持的數據類型概述
   - .
 - .
 - Key expiration
-  - 在繼續之前，我們應該了解一個重要的 Redis 功能，無論您存儲的值是什麼類型，它都可以 work：Key expiration。Key expiration 允許您為 key 設置 timeout，也稱為 “生存時間 time to live ” 或 “TTL”。
+  - 在繼續之前，我們應該了解一個重要的 Redis 功能，無論您存儲的值是什麼類型，它都可以 work：Key expiration。Key expiration
+    允許您為 key 設置 timeout，也稱為 “生存時間 time to live ” 或 “TTL”。
   - 當過期時間過去時，key 將自動銷毀。
     - 可以使用 秒 或 毫秒 精度設置它們。
     - 但是，過期時間 分辨率 始終為 1 毫秒。
-    - 關於過期的信息會被複製並保存在磁盤上，當您的 Redis 服務器保持停止時，時間實際上已經過去了（這意味著 Redis 會保存密鑰過期的日期）。
+    - 關於過期的信息會被複製並保存在磁盤上，當您的 Redis 服務器保持停止時，時間實際上已經過去了（這意味著 Redis
+      會保存密鑰過期的日期）。
+    - .
   - set mykey 100 ex 100
   - ttl key
   - .
 - .
--
+- Key delete
+  - 如果有需要 手動 刪除 key
+    - 實務上，不要用 Del 命令，也不要把 Expire 命令設置為 0
+    - 而是使用 Unlink 命令
+      - However the command performs the actual memory reclaiming in a different thread, so it is not blocking,
+      - while DEL is blocking.
+  - .
+- .
   - lists
   - Redis lists 是按插入順序排序的 strings 列表。有關詳細信息，請參閱：
     - Redis lists 概述
