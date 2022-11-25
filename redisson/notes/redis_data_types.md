@@ -90,6 +90,14 @@ Redis 數據類型 : Redis支持的數據類型概述
 | get mykey                                                          |     |     |
 | set mykey 100                                                      |     |     |
 | type mykey                                                         |     |     |
+| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo" ex 60                            |     |     |
+| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo"                                  |     |     |
+| .                                                                  |     |     |
+| set inventory:五月天演唱會:20230501 5000                                 |     |     |
+| decrby inventory:五月天演唱會:20230501 1                                 |     |     |
+| get inventory:五月天演唱會:20230501                                      |     |     |
+| type inventory:五月天演唱會:20230501                                     |     |     |
+| object encoding inventory:五月天演唱會:20230501                          |     |     |
 | .                                                                  |     |     |
 | set mykey newval nx                                                |     |     |
 | set mykey newval xx                                                |     |     |
@@ -101,6 +109,8 @@ Redis 數據類型 : Redis支持的數據類型概述
     - 增加一個計數器
       - INCR views:page:2
       - INCRBY views:page:2 10
+      - .
+      - INCRBY user:101:credit-balance -50
       - .
     - 限制
       - 默認情況下，單個 Redis string 最大為 512 MB
@@ -149,12 +159,31 @@ Redis 數據類型 : Redis支持的數據類型概述
 - Keys
   - Redis keys 是 binary safe 的，這意味著您可以使用任何二進制序列作為密鑰，從 “foo” 這樣的 strings 到 JPEG
     文件的內容。空字串 "" 也是一個有效的 key。
+    - any binary sequence can be used as a key,
+    - anything from a simple string like Foo,
+      numbers like 42, or 3.1415, 0xff, or a binary value.
+    - .
   - 很長的鍵不是一個好主意。例如，1024 字節的鍵不僅在內存方面是個壞主意，而且因為在數據集中查找鍵可能需要多次代價高昂的鍵比較。
   - 非常短的鍵通常不是一個好主意。如果您可以寫成“user:1000:followers”，那麼將“u1000flw”寫成鍵就沒什麼意義了。後者更具可讀性。
   - 訂出屬於我們自己的規範:
     - “object-type:id”是個好主意
-    - user:1000
+    - user:101
     - comment:4321:reply.to 或 comment:4321:reply-to 是兩種不同的命名規範
+    - .
+    - user:101:timezone UTC+8
+    - user:101:visit-count
+    - user:101:credit-balance
+    - .
+    - cache api response: usage:101 -> JSON
+    - .
+    - .
+    - 大小寫不同
+      - registeredusers:1000:followers
+      - RegisteredUsers:1000:followers
+      - registeredUsers:1000:followers
+      - .
+    - set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo" ex 60
+    - set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo"
     - .
   - .
 - .
@@ -169,6 +198,10 @@ Redis 數據類型 : Redis支持的數據類型概述
     - .
   - set mykey 100 ex 100
   - ttl key
+  - How can the expiration of keys be set?
+    - In seconds
+    - In milliseconds
+    - In Unix epoch time
   - .
 - .
 - Key delete
@@ -179,49 +212,132 @@ Redis 數據類型 : Redis支持的數據類型概述
       - while DEL is blocking.
   - .
 - .
+
+.
+
+- .
+  - hashes
+  - Redis hashes 是建模為字段值對集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。有關詳細信息，請參閱：
+    - Redis hashes 概述
+- .
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - lists
   - Redis lists 是按插入順序排序的 strings 列表。有關詳細信息，請參閱：
     - Redis lists 概述
 - .
--
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+- .
+  - .
+- .
+
+.
+
+- .
   - sets
   - Redis sets 是 unique strings 的無序集合，其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的集。使用
     Redis 集，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。有關詳細信息，請參閱：
     - Redis sets 概述
 - .
--
-  - hashes
-  - Redis hashes 是建模為字段值對集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。有關詳細信息，請參閱：
-    - Redis hashes 概述
+- .
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
 - .
   - sorted sets
   - Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。有關詳細信息，請參閱：
     - Redis sorted sets 概述
 - .
--
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - stream
   - Redis stream 是一種數據結構，其作用類似於僅附加日誌。stream 幫助按事件發生的順序記錄事件，然後聯合它們進行處理。有關詳細信息，請參閱：
     - Redis stream 概述
     - Redis stream 教程
 - .
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - geospatial indexes
   - Redis geospatial indexes 對於查找給定地理半徑或邊界框內的位置很有用。有關詳細信息，請參閱：
     - Redis geospatial indexes 概述
 - .
--
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - bitmaps
   - Redis bitmaps 可讓您對 strings 執行 bitwise 運算。有關詳細信息，請參閱：
     - Redis bitmaps 概述
 - .
--
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - bitfields
   - Redis bitfields 有效地將多個計數器編碼為一個 strings 值。位域提供原子獲取、設置和遞增操作，並支持不同的溢出策略。有關詳細信息，請參閱：
     - Redis bitfields 概述
 - .
--
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
+
+.
+
+- .
   - HyperLogLog
   - Redis HyperLogLog 數據結構提供大型集合的基數（即元素數量）的概率估計。有關詳細信息，請參閱：
     - Redis HyperLogLog 概述
+    - .
+  - .
+- .
+
+| command                                                            |     |     |
+|--------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                              |     |     |
+| set mykey 1234567890123456789                                      |     |     |
 
 .
 
