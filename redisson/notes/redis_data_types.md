@@ -215,6 +215,14 @@ Redis 數據類型 : Redis支持的數據類型概述
 
 .
 
+- 跟 redis Strings 有關的 Redisson classes
+  - 
+  -
+  - .
+- .
+
+.
+
 - .
   - hashes
   - Redis hashes 是建模為字段值對集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。有關詳細信息，請參閱：
