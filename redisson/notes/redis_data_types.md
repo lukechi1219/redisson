@@ -227,12 +227,39 @@ Redis 數據類型 : Redis支持的數據類型概述
   - hashes
   - Redis hashes 是建模為字段值對集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。有關詳細信息，請參閱：
     - Redis hashes 概述
+    - model domain objects
+    - .
+    - 如果要存儲為 json data，您可能可以需要考慮 RedisJSON
+    - .
 - .
 
-| command                                                            |     |     |
-|--------------------------------------------------------------------|-----|-----|
-| OBJECT ENCODING mykey                                              |     |     |
-| set mykey 1234567890123456789                                      |     |     |
+| command                                                                                                                                     |     |     |
+|---------------------------------------------------------------------------------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING user:123                                                                                                                    |     |     |
+| HSET user:123 username martina firstName Martina lastName Elisa country GB                                                                  |     |     |
+| HINCRBY device:777:stats pings 1                                                                                                            |     |     |
+| HINCRBY device:777:stats errors 1                                                                                                           |     |     |
+| HINCRBY device:777:stats requests 1                                                                                                         |     |     |
+| HMGET device:777:stats requests errors                                                                                                      |     |     |
+| .                                                                                                                                           |     |     |
+| HMSET coin heads obverse tails reverse edge null                                                                                            |     |     |
+| HRANDFIELD coin                                                                                                                             |     |     |
+| HRANDFIELD coin -5 WITHVALUES -> The order of fields in the reply is truly random.                                                          |     |     |
+| HRANDFIELD coin +5 WITHVALUES -> The order of fields in the reply is not truly random, so it is up to the client to shuffle them if needed. |     |     |
+| .                                                                                                                                           |     |     |
+
+- .
+  - Redis hashes are record types structured as collections of field-value pairs.
+  - You can use hashes to represent 
+    - basic objects and 
+    - to store groupings of counters, 
+    - among other things.
+  - .
+  - .
+    - 
+    - .
+  - .
+- .
 
 .
 
