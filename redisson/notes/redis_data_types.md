@@ -14,6 +14,16 @@ Redis 數據類型 : Redis支持的數據類型概述
 
 - Redis 是一個 數據結構 server。
 - Redis 的核心, 是提供一群 原生數據類型，可幫助您解決從 緩存 到 queuing 再到 事件處理 (event processing) 的各種問題。
+  - queuing
+    - https://miro.medium.com/max/640/1*aJWxvFXEYKa4DNQcJQGLRg.png
+  - event processing
+    - https://hazelcast.com/wp-content/uploads/2021/12/diagram-EventandStreamProc.png
+  - .
+- 每次分享結束後，會再問大家的問題
+  - 跟 Oracle 資料庫 有什麼不一樣？
+  - 跟 Java 用 Map 實作一個 cache 有什麼不一樣？
+  - .
+- 原生數據類型
   - basic
     - Strings
     - Lists
@@ -23,6 +33,8 @@ Redis 數據類型 : Redis支持的數據類型概述
     - .
   - advanced
     - Streams
+      - https://assets-global.website-files.com/622642781cd7e96ac1f66807/623136c006b2386cd97d7cbe_image-101.png
+      - .
     - .
   - other
     - Geospatial indexes
@@ -30,12 +42,19 @@ Redis 數據類型 : Redis支持的數據類型概述
     - Bitfields
     - HyperLogLog
     - .
+  - 不是 data type 的功能
+    - Transactions
+    - Pub/Sub
+      - https://assets-global.website-files.com/622642781cd7e96ac1f66807/623136bf4a52fcd6339f0d2b_image3-1.png
+      - .
+    - .
   - Extensions 擴充模組
-    - Lua scripting
+    - Lua scripting --> 可以比喻成 Oracle 的 stored procedure
     - modules API
     - Redis Stack
       - RedisJSON
         - 支援 JSONPath 直接操作 JSON documents 資料
+        - https://i.ytimg.com/vi/NLRbq2FtcIk/maxresdefault.jpg
       - RediSearch
         - Queries, 二級索引 secondary indexing, and full-text search for Redis
         - index and query JSON documents
@@ -47,7 +66,7 @@ Redis 數據類型 : Redis支持的數據類型概述
         - 其他用戶與該用戶剛剛添加到購物車的產品一起購買了哪些產品？
         - 欺詐識別
       - 機率資料結構 Probabilistic data structures
-        - 檢查用戶名是否被佔用（SaaS、內容髮布平台）
+        - 檢查用戶名是否被佔用（SaaS、內容發佈平台）
       - .
   - .
 - Redis 的效能，取決於不同指令的複雜度
@@ -72,36 +91,37 @@ Redis 數據類型 : Redis支持的數據類型概述
     - .
     - 實務上，Redis strings 最好維持在 10KB 以下 -> alibaba redis 開發規範
     - .
-    - 如果要將 結構化資料 存儲為 序列化字符串，您可能可以需要考慮 Redis hashes 或 RedisJSON
+    - 如果要將 結構化資料 存儲為 序列化字串，您可能可以需要考慮 Redis hashes 或 RedisJSON
     - .
 
-| command                                                            |     |     |
-|--------------------------------------------------------------------|-----|-----|
-| OBJECT ENCODING mykey                                              |     |     |
-| set mykey 1234567890123456789                                      |     |     |
-| set mykey 12345678901234567890                                     |     |     |
-| set mykey 9223372036854775807 (2 power 63 -1)                      |     |     |
-| SET user:1 salvatore                                               |     |     |
-| SET ticket:27 "\"{'username': 'priya', 'ticket_id': 321}\"" EX 100 |     |     |
-| INCR views:page:2                                                  |     |     |
-| INCRBY views:page:2 10                                             |     |     |
-| set mykey newval                                                   |     |     |
-| getset mykey newval2                                               |     |     |
-| get mykey                                                          |     |     |
-| set mykey 100                                                      |     |     |
-| type mykey                                                         |     |     |
-| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo" ex 60                            |     |     |
-| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo"                                  |     |     |
-| .                                                                  |     |     |
-| set inventory:五月天演唱會:20230501 5000                                 |     |     |
-| decrby inventory:五月天演唱會:20230501 1                                 |     |     |
-| get inventory:五月天演唱會:20230501                                      |     |     |
-| type inventory:五月天演唱會:20230501                                     |     |     |
-| object encoding inventory:五月天演唱會:20230501                          |     |     |
-| .                                                                  |     |     |
-| set mykey newval nx                                                |     |     |
-| set mykey newval xx                                                |     |     |
-|                                                                    |     |     |
+| command                                                              |     |     |
+|----------------------------------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                                                |     |     |
+| set mykey 1234567890123456789                                        |     |     |
+| set mykey 12345678901234567890                                       |     |     |
+| set mykey 9223372036854775807 (2 power 63 -1)                        |     |     |
+| INCRBY mykey 1                                                       |     |     |
+| SET user:1 salvatore                                                 |     |     |
+| SET ticket:27 "{\"username\": \"priya\", \"ticket_id\": 321}" EX 100 |     |     |
+| INCR views:page:2                                                    |     |     |
+| INCRBY views:page:2 10                                               |     |     |
+| set mykey newval                                                     |     |     |
+| getset mykey newval2                                                 |     |     |
+| get mykey                                                            |     |     |
+| set mykey 100                                                        |     |     |
+| type mykey                                                           |     |     |
+| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo" ex 60                              |     |     |
+| set 2022:金曲獎:最佳男歌手入圍名單 "Tony Kuo"                                    |     |     |
+| .                                                                    |     |     |
+| set inventory:五月天演唱會:20230501 5000                                   |     |     |
+| decrby inventory:五月天演唱會:20230501 1                                   |     |     |
+| get inventory:五月天演唱會:20230501                                        |     |     |
+| type inventory:五月天演唱會:20230501                                       |     |     |
+| object encoding inventory:五月天演唱會:20230501                            |     |     |
+| .                                                                    |     |     |
+| set mykey newval nx                                                  |     |     |
+| set mykey newval xx                                                  |     |     |
+|                                                                      |     |     |
 
 - . 
   - .
