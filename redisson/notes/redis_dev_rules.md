@@ -5,9 +5,9 @@
 - 情境: use redis as cache
   - 目的: 緩存處理，加快讀取效率 -> avoid read db
   - 使用過程中需要注意合理的使用
-    - 一般存儲全局配置數據
-    - 和一些訪問非常頻繁的較為靜態的數據
-  - 另外注意過期時間控制，減少資源的不必要消耗
+    - 一般存儲 全局配置數據 (global, 跨 server)
+    - 和一些訪問 非常頻繁 的 較為靜態 的數據
+  - 注意過期時間控制，減少資源的不必要消耗
   - .
 
 .
@@ -47,9 +47,6 @@ https://open.hand-china.com/hzero-docs/v1.3/zh/docs/development-specification/ba
 - 簡介： 本文介紹了在使用阿里雲Redis的開發規範，
   - 從鍵值設計、命令使用、客戶端使用、相關工具等方面進行說明，
 - 通過本文的介紹可以減少使用Redis過程帶來的問題。
-
-
-
 
 ---
 
@@ -133,7 +130,8 @@ bigkey可以說就是Redis的老鼠屎，具體表現在：
 
 3.網絡擁塞：
 
-bigkey也就意味著每次獲取要產生的網絡流量較大，假設一個bigkey為1MB，客戶端每秒訪問量為1000，那麼每秒產生1000MB的流量，對於普通的千兆網卡(
+bigkey也就意味著每次獲取要產生的網絡流量較大，假設一個bigkey為 1MB，客戶端每秒訪問量為
+1,000，那麼每秒產生1000MB的流量，對於普通的千兆網卡(
 按照字節算是128MB/s)的服務器來說簡直是滅頂之災，而且一般服務器會採用單機多實例的方式來部署，也就是說一個bigkey可能會對其他實例造成影響，其後果不堪設想。
 
 三、怎麼產生的？
@@ -162,13 +160,13 @@ big hash：可以做二次的hash，例如hash%100
 
 反例：
 
-set user:1:name tom
-set user:1:age 19
-set user:1:favor football
+- set user:1:name tom
+- set user:1:age 19
+- set user:1:favor football
 
 積極的：
 
-hmset user:1 name tom age 19 favor football
+- hmset user:1 name tom age 19 favor football
 
 3.【推薦】：控制key的生命週期，redis不是垃圾桶。
 
