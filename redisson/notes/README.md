@@ -1,27 +1,29 @@
 # Redis & Redisson
 
-# Notes
-
-
 # Learning Path 學習路徑
 
 - 背景知識
   - 效能: 時間複雜度 O(1) (constant-time), O(log(n)) (logarithmic), and O(n) (linear-time)
+  - .
   - 原子操作 atomic operation
+  - .
   - race condition: 執行緒 或 程序 訪問資料的先後順序決定了資料修改的結果
     - redis 基本型別保證 原子操作 安全, 但是無法避免 race condition
       - i++ ok
       - set i = 1, set i = 2 -> 看誰先搶到
       - get then set -> 看誰先搶到
+      - .
   - redis 提供 交易控制 -> 基本型別 之外的 原子操作
+  - .
   - redis 是 單線程 還是 多線程?
+  - .
   - 把某個 key 設定過期時間之後，redis server 重新啟動了，這個 key 還會過期嗎？
   - .
   - Redis.com 有推出 雲端解決方案 Redis Enterprise
+    - 增加記憶體, 升級, 完全 不影響 現有服務的運作
     - 30 MB RAM 免費
     - 500 MB RAM $36/month 每月台幣 1,000 多元
       - 自動擴展 / HA / 備份 / 災難復原
-    - 增加記憶體, 升級, 完全不影響現有服務的運作
   - .
 - redis
   - redis 開發規範
@@ -47,17 +49,19 @@
 - Spring Data Redis
   - redisson-spring-boot-starter
   - Jedis & Lettuce
-    - Redisson distinguishes itself from Lettuce because it is a higher-level client with another layer of abstraction, offering collections and other interfaces instead of raw Redis commands.
+    - Redisson distinguishes itself from Lettuce because it is a higher-level client with another layer of abstraction,
+      offering collections and other interfaces instead of raw Redis commands.
     - .
   - https://docs.spring.io/spring-data/data-redis/docs/current/reference/html/#why-spring-redis
   - https://github.com/spring-attic/spring-data-keyvalue-examples
   - https://docs.spring.io/spring-data/data-keyvalue/examples/retwisj/current/
   - .
-- tbd
+- Spring Data Redis + Redisson
   - Redisson + redis + springboot + 哨兵模式
   - https://segmentfault.com/q/1010000041193322
+  - .
   - springboot整合redisson
-    - !!!! 怎麼設定 兩組 client?
+    - 怎麼設定 兩組 client?
       - cluster
       - sentinel
       - 可參考以下文章
