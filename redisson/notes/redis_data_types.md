@@ -274,7 +274,10 @@ Redis 數據類型 : Redis支持的數據類型概述
     - basic objects and 
     - to store groupings of counters, 
     - among other things.
-  - .
+  - 顺便介绍一下redis中Map的使用场景：
+    - https://www.cnblogs.com/east7/p/16271043.html
+    - 存储结构化的数据，比如 Java 中的对象。其实 Java 中的对象也可以用 string 进行存储，只需要将对象序列化成 json 字符串就可以，但是如果这个对象的某个属性更新比较频繁的话，那么每次就需要重新将整个对象序列化存储，这样消耗开销比较大。可如果用 hash 来存储对象的每个属性，那么每次只需要更新要更新的属性就可以。
+    - 购物车场景。以业务线+用户id作为key，以店铺编号+商品的id作为存储的field，以选购商品数量作为键值对的value，这样就构成了购物车的三个要素。.
   - .
     - 
     - .

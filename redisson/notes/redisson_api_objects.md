@@ -12,10 +12,10 @@
 
 Represented by the RBucket class, this object can hold any type of object. This object has a maximum size of 512MB
 
-|                 | 6.2.5 |                                 | 
-|-----------------|-------|---------------------------------|
-| getBucket()     | O     |                                 | 
-| getBuckets()    | O     |                                 | 
+|                 | 6.2.5 |                                     | 
+|-----------------|-------|-------------------------------------|
+| getBucket()     | O     |                                     | 
+| getBuckets()    | O     |                                     | 
 | getJsonBucket() | X     | need enable Redis.Stack.JSON module | 
 
 
