@@ -13,6 +13,10 @@ https://redis.io/docs/data-types/tutorial/
 - 在學習 redis 的時候, 大家可以反問自己的問題
 	- 跟 Oracle 資料庫 有什麼不一樣？
 	- 跟 Java 用 Map 實作一個 cache 有什麼不一樣？
+- .
+- Think about how you will query your data before storing it
+	- 例如，如果您知道您將按日期範圍查詢數據，請考慮使用包含範圍開始日期和結束日期的鍵來儲存數據。
+- .
 
 ---
 
@@ -195,7 +199,7 @@ Redis 資料類型 :
 		- .
 		- cache api response: usage:101 -> JSON
 		- .
-		- dev rule: service 不應該直接存取 B service 的 redid 資料
+		- Dev Rule: service A 不應該直接存取 service B 的 redid 資料
 		- .
 		- 大小寫不同
 			- registeredusers:1000:followers
@@ -249,7 +253,7 @@ Redis 資料類型 :
 		- Redis hashes 概述
 		- model domain objects
 		- .
-		- 如果要存儲為 json data，您可能可以需要考慮 RedisJSON
+		- 如果要存儲為 json data，您可能需要考慮 RedisJSON
 		- .
 - .
 
@@ -270,17 +274,55 @@ Redis 資料類型 :
 
 - .
 	- Redis hashes are record types structured as collections of field-value pairs.
+	- .
 	- You can use hashes to represent
 		- basic objects and
 		- to store groupings of counters,
 		- among other things.
-	- 顺便介绍一下redis中Map的使用场景：
-		- https://www.cnblogs.com/east7/p/16271043.html
-		- 存储结构化的数据，比如 Java 中的对象。其实 Java 中的对象也可以用 string 进行存储，只需要将对象序列化成 json
-			字符串就可以，但是如果这个对象的某个属性更新比较频繁的话，那么每次就需要重新将整个对象序列化存储，这样消耗开销比较大。可如果用
-			hash 来存储对象的每个属性，那么每次只需要更新要更新的属性就可以。
-		- 购物车场景。以业务线+用户id作为key，以店铺编号+商品的id作为存储的field，以选购商品数量作为键值对的value，这样就构成了购物车的三个要素。.
+		- .
+	- redis 中 hashes 的使用场景：
+		- ref: https://www.cnblogs.com/east7/p/16271043.html
+		- .
+		- 存储结构化的数据，比如 Java 中的 Object 。其实 Java 中的 Object 也可以用 string 进行存储，只需要将 Object 序列化成
+			json
+			字符串就可以，但是如果这个 Object 的某个属性更新比较频繁的话，那么每次就需要重新将整个 Object 序列化存储，这样消耗开销比较大。可如果用
+			hash 来存储 Object 的每个属性，那么每次 只需要更新 要更新 的属性就可以。
+		- .
+		- 购物车场景。
+			- 以业务线+用户id作为key，以店铺编号+商品的id作为存储的field，以选购商品数量作为键值对的value，这样就构成了购物车的三个要素。
 	- .
+	- 儲存 session attributes
+		- The session data could be stored in a Redis hash, with the session ID serving as the key and the session data
+			being stored as fields within the hash..
+	- .
+	- Storing user data:
+		- Redis hashes can be used to store and manage data about individual users in an application.
+		- For example, you could use a Redis hash to store information about a user's profile, such as their name, email
+			address, and preferences.
+	- .
+	- Storing application settings:
+		- Redis hashes can be used to store and manage configuration data for an application.
+		- For example, you could use a Redis hash to store settings that control the behavior of the application,
+		- such as the timeouts for API requests, the minimum and maximum values for input fields, and the default values for
+			form fields.
+	- .
+	- Cache api calls
+		- in or out
+	- .
+	- Caching database query results
+		- to reduce the load on the database and improve the performance of the application.
+		- The cache could be implemented using Redis hashes,
+		- with the cache key being the query itself and the fields within the hash being the results of the query.
+	- .
+	- 常見的錯誤
+		- 用錯指令: HSET, HGET
+	- 濫用 HGETALL 指令
+	- 刪除的時候，直接整個 hash 刪除
+	- .
+	- hashes 跟 strings 的比較
+		- key expiration
+		- hashes 最多放幾千筆資料，不能放到上萬或上百萬
+		- .
 - .
 
 .
