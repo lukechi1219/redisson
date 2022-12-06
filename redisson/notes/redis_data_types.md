@@ -419,15 +419,40 @@ Redis 資料類型 :
 - Redis sets are useful for storing and processing data that needs to be unique, such as user IDs or email addresses.
 - .
 - 集合有利於表達對象之間的關係。例如，我們可以輕鬆地使用集合來實現 標籤 / 過濾器。
+- 另一種關係可以是 某個角色權限的所有 users 集合
+- 紀錄訪問某個網頁的 ip 清單集合
+- 紀錄今天有登入過的 users 清單集合
+  - 如果資料量很大，可以改用 Bloom filter or Cuckoo filter
 - .
+- 執行 交集 聯集 差集
 - .
+- 用作一種索引
+  - 某個 user 購買過哪些世足賽的場次門票?
+  - 如果需要索引和查詢的數據，請考慮 RediSearch
 - .
+- 關於 Sets 的另一個很酷的事情是支持偷看 (SRANDMEMBER) 或彈出隨機元素 (SPOP)
+- 撲克遊戲
+  - 一個牌組 就是 52 張牌的集合，且沒有固定順序
+  - SPOP 命令 會刪除一個隨機元素，將其返回給客戶端
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command                                      |     |     |
+|----------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                        |     |     |
+| .                                            |     |     |
+| SADD user:123:favorites 561                  |     |     |
+| SADD user:123:favorites 742                  |     |     |
+| .                                            |     |     |
+| SADD user:456:favorites 561                  |     |     |
+| .                                            |     |     |
+| 用戶 123 和 456 有沒有共同喜歡的 item?                  |     |     |
+| SINTER user:123:favorites user:456:favorites |     |     |
+| .                                            |     |     |
+| SADD tag:Java:posts ...                      |     |     |
+| SADD tag:MySQL:posts ...                     |     |     |
+| .                                            |     |     |
+| SINTER tag:Java:posts tag:MySQL:posts        |     |     |
+| .                                            |     |     |
 
 .
 
@@ -458,7 +483,7 @@ Redis 資料類型 :
 	- .
 - .
 
-.
+---
 
 - .
 	- stream
