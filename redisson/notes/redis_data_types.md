@@ -422,18 +422,18 @@ Redis 資料類型 :
 - 另一種關係可以是 某個角色權限的所有 users 集合
 - 紀錄訪問某個網頁的 ip 清單集合
 - 紀錄今天有登入過的 users 清單集合
-  - 如果資料量很大，可以改用 Bloom filter or Cuckoo filter
+	- 如果資料量很大，可以改用 Bloom filter or Cuckoo filter
 - .
 - 執行 交集 聯集 差集
 - .
 - 用作一種索引
-  - 某個 user 購買過哪些世足賽的場次門票?
-  - 如果需要索引和查詢的數據，請考慮 RediSearch
+	- 某個 user 購買過哪些世足賽的場次門票?
+	- 如果需要索引和查詢的數據，請考慮 RediSearch
 - .
 - 關於 Sets 的另一個很酷的事情是支持偷看 (SRANDMEMBER) 或彈出隨機元素 (SPOP)
 - 撲克遊戲
-  - 一個牌組 就是 52 張牌的集合，且沒有固定順序
-  - SPOP 命令 會刪除一個隨機元素，將其返回給客戶端
+	- 一個牌組 就是 52 張牌的集合，且沒有固定順序
+	- SPOP 命令 會刪除一個隨機元素，將其返回給客戶端
 - .
 
 | command                                      |     |     |
@@ -466,14 +466,35 @@ Redis 資料類型 :
 
 - .
 	- sorted sets
-	- Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。有關詳細信息，請參閱：
-		- Redis sorted sets 概述
+	- Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。
+	- 當多個 strings 具有相同的分數時，按字典順序排列。
+	- 每次我們添加一個元素時，Redis 都會執行 O(log(N)) 操作
+	- sorted sets 的分數可以隨時更新
+- .
+	- use cases
+		- 排行榜。例如，您可以使用排序集輕鬆維護大型在線遊戲中最高分的有序列表。
+	- Stack Overflow 和許多問答平台都使用 Redis Sorted Sets 對每個提議問題的最高投票答案進行排名，以確保最優質的內容列在頁面頂部。
+		- 速率限制器，以防止過多的 API 請求。
+- .
+- Redis 排序集有時用於索引其他 Redis 數據結構。
+- 如果需要索引和查詢的數據，請考慮 RediSearch
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command                                   |     |     |
+|-------------------------------------------|-----|-----|
+| OBJECT ENCODING mykey                     |     |     |
+| .                                         |     |     |
+| ZADD leaderboard:455 100 user:1           |     |     |
+| ZADD leaderboard:455 75 user:2            |     |     |
+| ZADD leaderboard:455 101 user:3           |     |     |
+| .                                         |     |     |
+| ZADD leaderboard:455 275 user:2           |     |     |
+| .                                         |     |     |
+| 獲取前 3 名玩家的分數                              |     |     |
+| ZRANGE leaderboard:455 0 2 REV WITHSCORES |     |     |
+| .                                         |     |     |
+| zrange leaderboard:455 0 -1               |     |     |
+| .                                         |     |     |
 
 .
 
@@ -487,15 +508,13 @@ Redis 資料類型 :
 
 - .
 	- stream
-	- Redis stream 是一種 資料 結構，其作用類似於僅附加日誌。stream 幫助按事件發生的順序記錄事件，然後聯合它們進行處理。有關詳細信息，請參閱：
-		- Redis stream 概述
-		- Redis stream 教程
+	- Redis stream 是一種 資料 結構，其作用類似於僅附加日誌。stream 幫助按事件發生的順序記錄事件，然後聯合它們進行處理。
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
 
 .
 
@@ -509,14 +528,13 @@ Redis 資料類型 :
 
 - .
 	- geospatial indexes
-	- Redis geospatial indexes 對於查找給定地理半徑或邊界框內的位置很有用。有關詳細信息，請參閱：
-		- Redis geospatial indexes 概述
+	- Redis geospatial indexes 對於查找給定地理半徑或邊界框內的位置很有用。
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
 
 .
 
@@ -530,14 +548,13 @@ Redis 資料類型 :
 
 - .
 	- bitmaps
-	- Redis bitmaps 可讓您對 strings 執行 bitwise 運算。有關詳細信息，請參閱：
-		- Redis bitmaps 概述
+	- Redis bitmaps 可讓您對 strings 執行 bitwise 運算。
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
 
 .
 
@@ -551,14 +568,13 @@ Redis 資料類型 :
 
 - .
 	- bitfields
-	- Redis bitfields 有效地將多個計數器編碼為一個 strings 值。位域提供原子獲取、設置和遞增操作，並支持不同的溢出策略。有關詳細信息，請參閱：
-		- Redis bitfields 概述
+	- Redis bitfields 有效地將多個計數器編碼為一個 strings 值。位域提供原子獲取、設置和遞增操作，並支持不同的溢出策略。
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
 
 .
 
@@ -572,16 +588,15 @@ Redis 資料類型 :
 
 - .
 	- HyperLogLog
-	- Redis HyperLogLog 資料 結構 提供大型集合的基數（即元素數量）的概率估計。有關詳細信息，請參閱：
-		- Redis HyperLogLog 概述
+	- Redis HyperLogLog 資料 結構 提供大型集合的基數（即元素數量）的概率估計。
 		- .
 	- .
 - .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
 
 .
 
