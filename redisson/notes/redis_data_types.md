@@ -15,14 +15,14 @@ https://redis.io/docs/data-types/tutorial/
 	- 跟 Java 用 Map 實作一個 cache 有什麼不一樣？
 - .
 - Think about how you will query your data before storing it
-	- 例如，如果您知道您將按日期範圍查詢數據，請考慮使用包含範圍開始日期和結束日期的鍵來儲存數據。
+	- 例如，如果您知道您將按日期範圍查詢資料，請考慮使用包含範圍開始日期和結束日期的鍵來儲存資料。
 - .
 
 ---
 
 Redis 資料類型 :
 
-- Redis 是一個 資料 結構 server
+- Redis 是一個 資料結構 server
 - Redis 的核心, 是提供一群 原生資料類型，可幫助解決從 緩存 (快取, cache) 到 訊息佇 (ㄓㄨˋ) 佇列 (queuing) 再到 事件處理 (
 	event processing) 的各種問題。
 	- queuing
