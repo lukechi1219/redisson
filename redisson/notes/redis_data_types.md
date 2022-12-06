@@ -360,16 +360,26 @@ Redis 資料類型 :
 	- Circular list 循環列表
 	- .
 	- Twitter, FB, IG 最新 10 篇貼文
-	- photoshop 特效: undo / redo
-	- .
-	- 商品 sku counter -> 好處，不會扣到負數。但如果有兩個以上 sku 要同時扣除，也是只能用 Lua script.
-	- .
+	- 使用者的最新 10 個通知訊息
+		- photoshop 特效: undo / redo
+		- .
+		- 商品 sku counter -> 好處，不會扣到負數。但如果有兩個以上 sku 要同時扣除，也是只能用 Lua script.
+		- .
 - .
 
 | command                                              |     |     |
 |------------------------------------------------------|-----|-----|
+| LPUSH mylist <some element>                          |     |     |
+| LTRIM mylist 0 99                                    |     |     |
+| .                                                    |     |     |
 | LPUSH board:todo:ids 101                             |     |     |
 | LPUSH board:todo:ids 273                             |     |     |
+| .                                                    |     |     |
+| LRANGE board:todo:ids 0 0                            |     |     |
+| LRANGE board:todo:ids 1 1                            |     |     |
+| LRANGE board:todo:ids 10 10                          |     |     |
+| LRANGE board:todo:ids -1 -1                          |     |     |
+| LRANGE board:todo:ids 0 -1                           |     |     |
 | .                                                    |     |     |
 | LMOVE board:todo:ids board:in-progress:ids LEFT LEFT |     |     |
 | .                                                    |     |     |
@@ -380,8 +390,14 @@ Redis 資料類型 :
 | 等待列表中的元素tasks，但如果 5 秒後沒有元素可用則返回                      |     |     |
 | .                                                    |     |     |
 
-- .
+- notes: Bad Practices
+	- Redis lists are great for storing and processing small amounts of data? -> 頭 尾 優化，不適合存取中間
+	- 不適合存放 complex data structures
+	- If you need to access elements in a Redis list by index, it is better to use a sorted set instead.
+	- avoid modifying Redis lists in a loop. 它 不是 array, 不要用 loop 去存取。可以直接用 LTRIM
+	- 沒有善用 pipelines
 	- .
+		- .
 - .
 
 .
@@ -395,10 +411,13 @@ Redis 資料類型 :
 .
 
 - .
-	- sets
-	- Redis sets 是 unique strings 的無序集合，其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的集。使用
-		Redis 集，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。有關詳細信息，請參閱：
-		- Redis sets 概述
+	- sets 集合
+	- Redis sets 是 unique strings 的無序集合，其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的 Set。
+	- 使用 Redis sets，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。
+- .
+- 集合有利於表達對象之間的關係。例如，我們可以輕鬆地使用集合來實現 標籤 / 過濾器。
+- .
+- .
 - .
 - .
 
