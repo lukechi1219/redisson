@@ -174,11 +174,9 @@ Redis 資料類型 :
 				- INCRBY {key} -5
 				- INCRBYFLOAT {key} 0.1
 		- .
+	- 在 Redis 的課程或文件的範例，會用 strings 來當作庫存管理的 計數器。
 		- 如果要避免 負數 或是 有其他商品 sku 要一起扣除，為了保持 原子操作，只能使用 Lua script.
 		- .
-			- .
-		- Bitwise 運算
-			- see the bitmaps data type docs.
 			- .
 		- Performance
 			- 大多數 strings 操作的 複雜度為 O(1)，這意味著它們非常 高效。
