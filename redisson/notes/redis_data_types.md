@@ -30,6 +30,14 @@ Redis 資料類型 :
 	- event processing
 	- <img src="https://hazelcast.com/wp-content/uploads/2021/12/diagram-EventandStreamProc.png" width="500" alt="">
 - .
+- 關於 Redis 能處理 Queuing 跟 Event Processing，這一點對於我們的架構轉型很重要
+	- 業務流程 以及 任務 的處理，如果要轉型成微服務，達成橫向擴展的話
+	- 就需要將流程跟任務，調整成 事件驅動的架構
+	- 而 Redis 可以提供我們這樣的資料結構跟功能
+	- .
+	- 關於這個議題，有興趣的人可以參考: [ 落實任務狀態事件化: 無痛導入微服務架構的起手式 ]
+	- https://medium.brobridge.com/%E8%90%BD%E5%AF%A6%E4%BB%BB%E5%8B%99%E7%8B%80%E6%85%8B%E4%BA%8B%E4%BB%B6%E5%8C%96-813a9366d42e
+- .
 - Redis 原生資料類型
 	- basic
 		- Strings
@@ -49,19 +57,25 @@ Redis 資料類型 :
 	- Transactions 交易控制
 	- Pub/Sub
 	- <img src="https://assets-global.website-files.com/622642781cd7e96ac1f66807/623136bf4a52fcd6339f0d2b_image3-1.png" style="width: 600px;" alt="">
+	- .
 - Extensions 擴充模組
 	- Lua scripting --> 可以比喻成 Oracle 的 stored procedure
 	- modules API
 	- Redis Stack
 		- RedisJSON
 			- 支援 JSONPath 直接操作 JSON documents 資料
-		- <img src="https://i.ytimg.com/vi/NLRbq2FtcIk/maxresdefault.jpg" alt="">
+		- <img src="https://i.ytimg.com/vi/NLRbq2FtcIk/maxresdefault.jpg" style="width: 650px;" alt="">
 	- .
 		- RediSearch
 			- Queries, 二級索引 secondary indexing, and full-text search for Redis
+				- BSUVMFTF
+				- (ZEHJPECZ)|(BSUV*)
 			- index and query JSON documents
+			- .
 		- RedisTimeSeries
-			- 時間序列資料
+			- 時間序列資料 -> 股價
+			- https://www.youtube.com/watch?v=NpK0p7ad55k
+			- .
 		- RedisGraph
 			- Resource management (supply chain)
 			- 誰是我朋友 A 的朋友，誰也是 B 的朋友？
@@ -87,7 +101,6 @@ Redis 資料類型 :
 	- strings 資料類型可用於許多 use case，例如 緩存 HTML 片段 or 頁面 or jpeg 圖像 (而不用直接讀取硬碟)。
 		- .
 		- Redis strings 儲存 sequences of bytes, 包括 text, serialized objects, and binary arrays.
-		- 因此, strings 是最基本的 Redis data type.
 		- 它們通常用於 緩存 caching, 但它們支持額外的功能，使您也可以實現 計數器 和 執行 bitwise 運算.
 		- .
 		- 實務上，Redis strings 最好維持在 10KB 以下 -> alibaba redis 開發規範
@@ -160,6 +173,9 @@ Redis 資料類型 :
 				- INCRBY {key} 10
 				- INCRBY {key} -5
 				- INCRBYFLOAT {key} 0.1
+		- .
+		- 如果要避免 負數 或是 有其他商品 sku 要一起扣除，為了保持 原子操作，只能使用 Lua script.
+		- .
 			- .
 		- Bitwise 運算
 			- see the bitmaps data type docs.
@@ -189,7 +205,7 @@ Redis 資料類型 :
 		key 比較。
 	- 非常短的 key 通常不是一個好主意。如果您可以寫成 “user:1000:followers”，那麼將 “u1000flw” 寫成 key 就沒什麼意義了。前者更具可讀性。
 	- 訂出屬於我們自己的規範:
-		- “object-type:id”是個好主意
+		- “object-type:id”
 		- user:101
 		- comment:4321:reply.to 或 comment:4321:reply-to 是兩種不同的命名規範
 		- .
@@ -215,7 +231,6 @@ Redis 資料類型 :
 	- 在繼續之前，我們應該了解一個重要的 Redis 功能，無論您存儲的值是什麼類型，它都可以 work：Key expiration。Key expiration
 		允許您為 key 設置 timeout，也稱為 “生存時間 time to live ” 或 “TTL”。
 	- 當過期時間過去時，key 將自動銷毀。
-		- 可以使用 秒 或 毫秒 精度設置它們。
 		- 但是，過期時間 分辨率 始終為 1 毫秒。
 		- 關於過期的信息會被複製並保存在磁盤上，當您的 Redis 服務器保持停止時，時間實際上已經過去了（這意味著 Redis
 			會保存 key 過期的日期）。
@@ -225,7 +240,7 @@ Redis 資料類型 :
 	- How can the expiration of keys be set?
 		- In seconds
 		- In milliseconds
-		- In Unix epoch time
+		- In Unix epoch time (timestamp)
 	- .
 - .
 - Key delete
@@ -249,11 +264,8 @@ Redis 資料類型 :
 
 - .
 	- hashes
-	- Redis hashes 是建模為字段值對集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。有關詳細信息，請參閱：
-		- Redis hashes 概述
-		- model domain objects
-		- .
-		- 如果要存儲為 json data，您可能需要考慮 RedisJSON
+	- Redis hashes 是建模為 Strings pair 集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。
+		- 如果要存儲 json data，您可能需要考慮 RedisJSON
 		- .
 - .
 
@@ -289,11 +301,11 @@ Redis 資料類型 :
 			hash 来存储 Object 的每个属性，那么每次 只需要更新 要更新 的属性就可以。
 		- .
 		- 购物车场景。
-			- 以业务线+用户id作为key，以店铺编号+商品的id作为存储的field，以选购商品数量作为键值对的value，这样就构成了购物车的三个要素。
+			- 以业务线+用户id作为key，以店铺编号 + 商品的 id 作为存储的 field，以选购商品数量作为键值对的 value，这样就构成了购物车的三个要素。
 	- .
 	- 儲存 session attributes
 		- The session data could be stored in a Redis hash, with the session ID serving as the key and the session data
-			being stored as fields within the hash..
+			being stored as fields within the hash.
 	- .
 	- Storing user data:
 		- Redis hashes can be used to store and manage data about individual users in an application.
@@ -321,7 +333,7 @@ Redis 資料類型 :
 	- .
 	- hashes 跟 strings 的比較
 		- key expiration
-		- hashes 最多放幾千筆資料，不能放到上萬或上百萬
+		- hashes 最多放幾千筆資料，不建議放到上萬或上百萬
 		- .
 - .
 
@@ -340,11 +352,33 @@ Redis 資料類型 :
 	- Redis lists 是按插入順序排序的 strings 列表。有關詳細信息，請參閱：
 		- Redis lists 概述
 - .
+- <img alt="" class="ce kb kc c" width="422" height="133" loading="lazy" role="presentation" src="https://miro.medium.com/max/422/0*mmsvg6TEGzUdP-0Z.png">
+- .
+- 使用情境:
+	- Queue
+	- Stack
+	- Circular list 循環列表
+	- .
+	- Twitter, FB, IG 最新 10 篇貼文
+	- photoshop 特效: undo / redo
+	- .
+	- 商品 sku counter -> 好處，不會扣到負數。但如果有兩個以上 sku 要同時扣除，也是只能用 Lua script.
+	- .
+- .
 
-| command                       |     |     |
-|-------------------------------|-----|-----|
-| OBJECT ENCODING mykey         |     |     |
-| set mykey 1234567890123456789 |     |     |
+| command                                              |     |     |
+|------------------------------------------------------|-----|-----|
+| LPUSH board:todo:ids 101                             |     |     |
+| LPUSH board:todo:ids 273                             |     |     |
+| .                                                    |     |     |
+| LMOVE board:todo:ids board:in-progress:ids LEFT LEFT |     |     |
+| .                                                    |     |     |
+| LRANGE board:todo:ids 0 -1                           |     |     |
+| LRANGE board:in-progress:ids 0 -1                    |     |     |
+| .                                                    |     |     |
+| brpop tasks 5                                        |     |     |
+| 等待列表中的元素tasks，但如果 5 秒後沒有元素可用則返回                      |     |     |
+| .                                                    |     |     |
 
 - .
 	- .
