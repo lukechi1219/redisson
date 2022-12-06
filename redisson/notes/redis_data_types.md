@@ -412,8 +412,11 @@ Redis 資料類型 :
 
 - .
 	- sets 集合
-	- Redis sets 是 unique strings 的無序集合，其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的 Set。
-	- 使用 Redis sets，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。
+	- Redis sets are unordered collections of strings, where each element in the set is unique.
+	- 其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的 Set。
+		- 使用 Redis sets，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。
+- .
+- Redis sets are useful for storing and processing data that needs to be unique, such as user IDs or email addresses.
 - .
 - 集合有利於表達對象之間的關係。例如，我們可以輕鬆地使用集合來實現 標籤 / 過濾器。
 - .
