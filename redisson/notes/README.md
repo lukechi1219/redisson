@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD;
-    A-->B;
+    背景知識-->B;
     A-->C;
     B-->D;
     C-->D;
