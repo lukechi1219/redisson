@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD;
-    背景知識-->"data types: Basic";
+    背景知識-->"data types Basic";
     A-->C;
     B-->D;
     C-->D;
