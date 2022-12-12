@@ -3,20 +3,20 @@
 # Learning Path 學習路徑
 
 ```mermaid
-graph TD;
-    背景知識-->data types Basic;
+graph LR;
+    背景知識-->A[data types Basic];
     A-->C;
     B-->D;
     C-->D;
 ```
 
 ```mermaid
-graph TD;
-  背景知識-->data types: Basic;
-  data types: Basic-->data types: Special;
-  data types: Special-->redis 其他功能;
-  redis 其他功能-->Redisson;
-  Redisson-->Spring Data Redis;
+graph LR;
+  背景知識-->1[data types: Basic];
+  1[data types: Basic]-->2[data types: Special];
+  2[data types: Special]-->3[redis 其他功能];
+  3[redis 其他功能]-->Redisson;
+  Redisson-->4[Spring Data Redis];
 ```
 
 - 背景知識
