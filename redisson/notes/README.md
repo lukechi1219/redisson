@@ -4,14 +4,6 @@
 
 ```mermaid
 graph LR;
-    背景知識-->A[data types Basic];
-    A-->C;
-    B-->D;
-    C-->D;
-```
-
-```mermaid
-graph LR;
   背景知識-->1[data types: Basic];
   1[data types: Basic]-->2[data types: Special];
   2[data types: Special]-->3[redis 其他功能];
