@@ -4,6 +4,14 @@
 
 ```mermaid
 graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
+
+```mermaid
+graph TD;
 背景知識-->data types: Basic;
 data types: Basic-->data types: Special;
 data types: Special-->redis 其他功能;
