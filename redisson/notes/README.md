@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD;
-背景知識 -> data types: Basic -> data types: Special -> redis 其他功能 -> Redisson -> Spring Data Redis
+背景知識 --> data types: Basic --> data types: Special --> redis 其他功能 --> Redisson --> Spring Data Redis
 ```
 
 - 背景知識
