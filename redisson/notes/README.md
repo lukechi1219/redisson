@@ -2,6 +2,10 @@
 
 # Learning Path 學習路徑
 
+```mermaid
+背景知識 -> data types: Basic -> data types: Special -> redis 其他功能 -> Redisson -> Spring Data Redis
+```
+
 - 背景知識
 	- 效能: 時間複雜度
 		- O(1) (constant-time),
@@ -15,6 +19,7 @@
 			- i++ ok
 			- set i = 1, set i = 2 -> 看誰先搶到
 			- get then set -> 看誰先搶到
+			- SET account:21_sam "{"name": "sam", "balance": 1,000,000}"
 			- .
 	- redis 提供 交易控制 -> 基本型別 之外的 原子操作
 	- .
