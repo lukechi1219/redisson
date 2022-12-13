@@ -539,15 +539,41 @@ Redis 資料類型 :
 .
 
 - 跟 redis Stream 有關的 Redisson classes
-	- 
+	- .
 	-
 	- .
 - .
 
 .
 
+- # Pub/Sub
+  - https://redis.io/docs/manual/pubsub/
+  - .
+  - 訂閱者表示對一個或多個頻道感興趣，並且只接收感興趣的消息，而不知道有哪些（如果有）發布者。
+    - 多用戶高性能網絡聊天
+      - with web socket
+  - .
+  - 發布者和訂閱者的這種解耦可以允許更大的可擴展性和更動態的網絡拓撲。
+  - .
+  - 缺點：
+    - Redis 7.0 以下，不建議用在 cluster mode -> 網路會爆掉
+    - Redis 7.0 以上，sharded Pub/Sub 可以用在 cluster mode.
+    - .
+  - .
 - .
-	- geospatial indexes
+- .
+
+| command               |     |     |
+|-----------------------|-----|-----|
+| OBJECT ENCODING mykey |     |     |
+| .                     |     |     |
+
+.
+
+.
+
+- # geospatial indexes
+	- .
 	- Redis geospatial indexes 對於查找給定地理半徑或邊界框內的位置很有用。
 - .
 
