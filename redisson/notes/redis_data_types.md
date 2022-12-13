@@ -253,7 +253,7 @@ Redis 資料類型 :
 .
 
 - 跟 redis Strings 有關的 Redisson classes
-	- 
+	- .
 	-
 	- .
 - .
@@ -338,7 +338,7 @@ Redis 資料類型 :
 .
 
 - 跟 redis Hashes 有關的 Redisson classes
-	- 
+	- .
 	-
 	- .
 - .
@@ -401,8 +401,7 @@ Redis 資料類型 :
 .
 
 - 跟 redis Lists 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
@@ -455,15 +454,14 @@ Redis 資料類型 :
 .
 
 - 跟 redis Sets 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
 .
 
-- .
-	- sorted sets
+- Sorted Sets
+	- .
 	- Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。
 	- 當多個 strings 具有相同的分數時，按字典順序排列。
 	- 每次我們添加一個元素時，Redis 都會執行 O(log(N)) 操作
@@ -504,15 +502,39 @@ Redis 資料類型 :
 
 ---
 
+- Streams
+	- .
+	- Redis Streams 是一種 資料 結構，其作用類似於 append-only log。
+	- Streams 幫助按事件發生的順序記錄事件，然後 組織 它們進行處理。
+	- use cases include:
+		- Event sourcing (e.g., tracking 用戶操作、點擊, etc.)
+		- 傳感器監控（例如，現場設備的讀數）
+	- 通知（例如，將每個用戶的通知記錄存儲在單獨的流中）
+	- .
+	- .
+	- Redis 為每個 Streams entry 生成一個唯一的 ID。您可以使用這些 ID 稍後檢索它們的關聯 entry，或者讀取和處理 Streams
+		中的所有後續 entry 。
+	- .
+	- Redis Streams 支持多種修剪策略（以防止 Streams 無限制地增長）和不止一種消費策略（請參閱 XREAD、XREADGROUP 和 XRANGE ）。
+	- .
+- Redis University 的 RU202 是專門針對 Redis Streams 的免費在線課程。
+	- https://university.redis.com/courses/ru202/
 - .
-	- stream
-	- Redis stream 是一種 資料 結構，其作用類似於僅附加日誌。stream 幫助按事件發生的順序記錄事件，然後聯合它們進行處理。
+- Redis Streams Explained 是對 Redis Streams 的有趣介紹影片。
+	- https://www.youtube.com/watch?v=Z8qcpXyMAiA
+- .
+- 關於 Redis Streams 的綜合教程
+	- https://redis.io/docs/data-types/streams-tutorial/
 - .
 
-| command               |     |     |
-|-----------------------|-----|-----|
-| OBJECT ENCODING mykey |     |     |
-| .                     |     |     |
+| command                                                                                                                           |     |     |
+|-----------------------------------------------------------------------------------------------------------------------------------|-----|-----|
+| 讀取最多 100 個新的 entry，從末尾開始，<br/>如果沒有 entry 被寫入，則最多阻塞 3000 毫秒<br/><br/>XREAD COUNT 100 BLOCK 3000 STREAMS temperatures:us-ny:10007 $ |     |     |
+| .                                                                                                                                 |     |     |
+| XADD temperatures:us-ny:10007 * temp_f 87.2 pressure 29.69 humidity 46                                                            |     |     |
+| XADD temperatures:us-ny:10007 * temp_f 83.1 pressure 29.21 humidity 46.5                                                          |     |     |
+| XADD temperatures:us-ny:10007 * temp_f 81.9 pressure 28.37 humidity 43.7                                                          |     |     |
+| .                                                                                                                                 |     |     |
 
 .
 
