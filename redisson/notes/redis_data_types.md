@@ -482,6 +482,26 @@ Redis 資料類型 :
 
 .
 
+<img src="images/list_01.jpg" style="width: 400px" alt="">
+
+.
+
+<img src="images/list_02_1.png" style="width: 400px" alt="">
+
+.
+
+[//]: # (<img src="images/list_02.png" style="width: 600px" alt="">)
+
+.
+
+<img src="images/set_01_1.png" style="width: 400px" alt="">
+
+.
+
+[//]: # (<img src="images/set_01.png" style="width: 600px" alt="">)
+
+.
+
 - # Sorted Sets
 	- Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。
 	- 當多個 strings 具有相同的分數時，按字典順序排列。
@@ -531,11 +551,12 @@ Redis 資料類型 :
 	- 通知（例如，將每個用戶的通知記錄存儲在單獨的 Stream 中）
 	- .
 	- .
-	- Redis 為每個 Streams entry 生成一個唯一的 ID。您可以使用這些 ID 稍後檢索它們的關聯 entry，或者讀取和處理 Streams
-		中的所有後續 entry 。
-	- .
-	- Redis Streams 支持多種修剪策略（以防止 Streams 無限制地增長）和不止一種消費策略（請參閱 XREAD、XREADGROUP 和 XRANGE ）。
-	- .
+		- .
+		- Redis 為每個 Streams entry 生成一個唯一的 ID。您可以使用這些 ID 稍後檢索它們的關聯 entry，或者讀取和處理 Streams
+			中的所有後續 entry 。
+		- .
+		- Redis Streams 支持多種修剪策略（以防止 Streams 無限制地增長）和不止一種消費策略（請參閱 XREAD、XREADGROUP 和 XRANGE ）。
+		- .
 - Redis University 的 RU202 是專門針對 Redis Streams 的免費在線課程。
 	- https://university.redis.com/courses/ru202/
 - .
@@ -545,6 +566,16 @@ Redis 資料類型 :
 - 關於 Redis Streams 的綜合教程
 	- https://redis.io/docs/data-types/streams-tutorial/
 - .
+
+<img src="images/stream_01.jpg" style="width: 700px" alt="">
+.
+<img src="images/stream_02.jpg" style="width: 700px" alt="">
+.
+<img src="images/stream_03.jpg" style="width: 700px" alt="">
+.
+<img src="images/stream_04.jpg" style="width: 700px" alt="">
+
+.
 
 | command                                                                                                                           |     |     |
 |-----------------------------------------------------------------------------------------------------------------------------------|-----|-----|
@@ -603,10 +634,12 @@ Redis 資料類型 :
 - .
 - .
 
-| command               |     |     |
-|-----------------------|-----|-----|
-| OBJECT ENCODING mykey |     |     |
-| .                     |     |     |
+| command                |     |     |
+|------------------------|-----|-----|
+| SUBSCRIBE first second |     |     |
+| .                      |     |     |
+| PUBLISH second Hello   |     |     |
+| .                      |     |     |
 
 .
 
@@ -614,6 +647,38 @@ Redis 資料類型 :
 	- .
 	- .
 - .
+
+.
+
+# 一級索引，二級索引，RediSearch demo
+
+- 開 redis insight 介面
+
+# 之前看到 redisson 錯誤用法
+
+```java
+public class Demo {
+    public static void main(String[] args) {
+
+        if (rBucket.isExists()) {
+            return rBucket.get();
+        }
+        return null;
+    }
+
+    public test() {
+        MGPlusTokenRs mgPlusTokenRs = getToken();
+
+        rBucket.set(mgPlusTokenRs.getAccessToken());
+
+        Duration duration = Duration.ofSeconds(mgPlusTokenRs.getExpiresIn() - 600);
+
+        rBucket.expire(duration);
+    }
+}
+```
+
+---
 
 .
 
