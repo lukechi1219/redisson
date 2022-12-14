@@ -18,6 +18,32 @@ https://redis.io/docs/data-types/tutorial/
 	- 例如，如果您知道您將按日期範圍查詢資料，請考慮使用包含範圍開始日期和結束日期的鍵來儲存資料。
 - .
 
+.
+
+# updates:
+
+- 2022-12-14
+	- Redis key:
+		- 大括號 { } 有特殊的意義，要注意不要誤用
+		- 用來表示 key 的範圍
+		- .
+	- Redis list:
+		- IG, Twitter 貼文
+		- photoshop 特效: undo/redo
+		- .
+	- Redis 可以用來存 臨時 的資料
+		- 線上商店購物車
+			- 使用者登出後，還是可以留在 Redis，下次登入後可以直接讀取 (不用從資料庫讀取，甚至不需要存到資料庫)
+			- 存在 cookie 的話，使用者從 電腦 換成 手機，就拿不到了
+			- .
+		- .
+	- .
+- 2022-12-xx
+	- .
+- .
+
+.
+
 ---
 
 Redis 資料類型 :
@@ -94,8 +120,7 @@ Redis 資料類型 :
 .
 
 - Core
-- .
-	- strings
+- # Strings
 	- Redis strings 是最基本的 Redis 資料類型，代表一串 sequence of bytes (010101010101....)。
 	- 由於 Redis key 是 strings，當我們也使用 strings 類型作為值時，我們是將一個 strings 映射到另一個 strings。
 	- strings 資料類型可用於許多 use case，例如 緩存 HTML 片段 or 頁面 or jpeg 圖像 (而不用直接讀取硬碟)。
@@ -192,7 +217,7 @@ Redis 資料類型 :
 		- .
 	- .
 - .
-- Keys
+- # Keys
 	- Redis keys 是 binary safe 的，這意味著您可以使用任何二進制序列作為 key，從 “foo” 這樣的 strings 到 JPEG
 		文件的內容。空字串 "" 也是一個有效的 key。
 		- any binary sequence can be used as a key,
@@ -225,7 +250,7 @@ Redis 資料類型 :
 		- .
 	- .
 - .
-- Key expiration
+- # Key expiration
 	- 在繼續之前，我們應該了解一個重要的 Redis 功能，無論您存儲的值是什麼類型，它都可以 work：Key expiration。Key expiration
 		允許您為 key 設置 timeout，也稱為 “生存時間 time to live ” 或 “TTL”。
 	- 當過期時間過去時，key 將自動銷毀。
@@ -260,8 +285,7 @@ Redis 資料類型 :
 
 .
 
-- .
-	- hashes
+- # Hashes
 	- Redis hashes 是建模為 Strings pair 集合的記錄類型。因此，Redis 哈希類似於Python 字典、Java HashMaps 和 Ruby 哈希。
 		- 如果要存儲 json data，您可能需要考慮 RedisJSON
 		- .
@@ -345,8 +369,7 @@ Redis 資料類型 :
 
 .
 
-- .
-	- lists
+- # Lists
 	- Redis lists 是按插入順序排序的 strings 列表。有關詳細信息，請參閱：
 		- Redis lists 概述
 - .
@@ -407,8 +430,7 @@ Redis 資料類型 :
 
 .
 
-- .
-	- sets 集合
+- # Sets 集合
 	- Redis sets are unordered collections of strings, where each element in the set is unique.
 	- 其作用類似於您最喜歡的編程語言（例如，Java HashSets、Python 集等）中的 Set。
 		- 使用 Redis sets，您可以添加、刪除和測試是否存在 O(1) 時間（換句話說，無論集元素的數量如何）。
@@ -460,8 +482,7 @@ Redis 資料類型 :
 
 .
 
-- Sorted Sets
-	- .
+- # Sorted Sets
 	- Redis sorted sets 是 unique strings 的集合，這些 strings 按每個 strings 的關聯分數保持順序。
 	- 當多個 strings 具有相同的分數時，按字典順序排列。
 	- 每次我們添加一個元素時，Redis 都會執行 O(log(N)) 操作
@@ -495,21 +516,19 @@ Redis 資料類型 :
 .
 
 - 跟 redis Sorted Set 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
 ---
 
-- Streams
-	- .
+- # Streams
 	- Redis Streams 是一種 資料 結構，其作用類似於 append-only log。
 	- Streams 幫助按事件發生的順序記錄事件，然後 組織 它們進行處理。
 	- use cases include:
 		- Event sourcing (e.g., tracking 用戶操作、點擊, etc.)
 		- 傳感器監控（例如，現場設備的讀數）
-	- 通知（例如，將每個用戶的通知記錄存儲在單獨的流中）
+	- 通知（例如，將每個用戶的通知記錄存儲在單獨的 Stream 中）
 	- .
 	- .
 	- Redis 為每個 Streams entry 生成一個唯一的 ID。您可以使用這些 ID 稍後檢索它們的關聯 entry，或者讀取和處理 Streams
@@ -538,20 +557,41 @@ Redis 資料類型 :
 
 .
 
+- # Homework
+-
+	1. Stream pipeline 為分佈式系統提供了哪些好處？（選擇所有符合的）：
+	
+	- 提高吞吐量
+	- 異步處理
+	- 系統組件解耦
+	- 更少的系統組件故障
+	- .
+-
+	2. 以下哪些是使用流處理系統的充分理由 / 好理由？
+	
+	- 資料不斷產生
+	- 資料產生的速率可能會 (周期性) 激增
+	- 資料集太大，無法完整儲存
+	- 可以從處理資料的 sub set 獲得有意義的結果
+	- .
+- .
+
+.
+
 - 跟 redis Stream 有關的 Redisson classes
 	- .
-	-
 	- .
 - .
 
 .
 
 - # Pub/Sub
-  - https://redis.io/docs/manual/pubsub/
+	- https://redis.io/docs/manual/pubsub/
   - .
   - 訂閱者表示對一個或多個頻道感興趣，並且只接收感興趣的消息，而不知道有哪些（如果有）發布者。
     - 多用戶高性能網絡聊天
-      - with web socket
+			- with web socket
+			- 跨平台: web, mobile, desktop, TV, etc.
   - .
   - 發布者和訂閱者的這種解耦可以允許更大的可擴展性和更動態的網絡拓撲。
   - .
@@ -570,10 +610,14 @@ Redis 資料類型 :
 
 .
 
+- 跟 redis Pub/Sub 有關的 Redisson classes
+	- .
+	- .
+- .
+
 .
 
-- # geospatial indexes
-	- .
+- # Geospatial Indexes
 	- Redis geospatial indexes 對於查找給定地理半徑或邊界框內的位置很有用。
 - .
 
@@ -585,15 +629,13 @@ Redis 資料類型 :
 .
 
 - 跟 redis Geo 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
 .
 
-- .
-	- bitmaps
+- # Bitmaps
 	- Redis bitmaps 可讓您對 strings 執行 bitwise 運算。
 - .
 
@@ -605,15 +647,13 @@ Redis 資料類型 :
 .
 
 - 跟 redis Bitmaps 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
 .
 
-- .
-	- bitfields
+- # Bitfields
 	- Redis bitfields 有效地將多個計數器編碼為一個 strings 值。位域提供原子獲取、設置和遞增操作，並支持不同的溢出策略。
 - .
 
@@ -625,15 +665,13 @@ Redis 資料類型 :
 .
 
 - 跟 redis Bitfields 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
 .
 
-- .
-	- HyperLogLog
+- # HyperLogLog
 	- Redis HyperLogLog 資料 結構 提供大型集合的基數（即元素數量）的概率估計。
 		- .
 	- .
@@ -647,8 +685,7 @@ Redis 資料類型 :
 .
 
 - 跟 redis HyperLogLog 有關的 Redisson classes
-	- 
-	-
+	- .
 	- .
 - .
 
@@ -661,5 +698,4 @@ Redis 資料類型 :
 	- 使用模塊 API編寫您自己的 Redis 模塊或查看社區支持的模塊。
 	- 使用JSON、查詢、時間序列和Redis Stack提供的其他功能。
 
-
-
+.
