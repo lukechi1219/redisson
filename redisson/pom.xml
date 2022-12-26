@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.redisson</groupId>
         <artifactId>redisson-parent</artifactId>
-        <version>3.17.8-SNAPSHOT</version>
+        <version>3.19.1-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <version>3.4.18</version>
+            <version>3.4.24</version>
         </dependency>
         <dependency>
             <groupId>org.reactivestreams</groupId>
@@ -126,23 +126,28 @@
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>8.5.79</version>
+            <version>10.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-jasper</artifactId>
-            <version>8.5.79</version>
+            <version>10.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jasper</artifactId>
-            <version>8.5.79</version>
+            <version>10.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -187,11 +192,19 @@
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling</artifactId>
             <version>2.0.11.Final</version>
+<!--
+            <scope>provided</scope>
+            <optional>true</optional>
+-->
         </dependency>
         <dependency>
             <groupId>org.jboss.marshalling</groupId>
             <artifactId>jboss-marshalling-river</artifactId>
             <version>2.0.11.Final</version>
+<!--
+            <scope>provided</scope>
+            <optional>true</optional>
+-->
         </dependency>
         <dependency>
             <groupId>org.msgpack</groupId>
@@ -213,13 +226,17 @@
             <version>2.57</version>
             <scope>provided</scope>
             <optional>true</optional>
+            <exclusions>
+              <exclusion>
+                 <groupId>org.objenesis</groupId>
+                 <artifactId>objenesis</artifactId>
+              </exclusion>
+            </exclusions> 
         </dependency>
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <version>5.3.0</version>
-            <scope>provided</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -282,7 +299,12 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.12.10</version>
+            <version>1.12.18</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.33</version>
         </dependency>
         <dependency>
             <groupId>org.jodd</groupId>

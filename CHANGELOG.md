@@ -3,6 +3,72 @@ Redisson Releases History
 
 Try __[Redisson PRO](https://redisson.pro)__ with **ultra-fast performance** and **support by SLA**.
 
+### 16-Dec-2022 - 3.19.0 released
+
+Feature - implementation of Spring Cache methods added in Spring 5.2  
+Feature - `entriesRead` and `lag` fields added to `StreamGroup` object  
+Feature - added [RFencedLock](https://github.com/redisson/redisson/wiki/8.-distributed-locks-and-synchronizers/#810-fenced-lock) implementation  
+Feature - [credentialsResolver](https://github.com/redisson/redisson/wiki/2.-Configuration#credentialsresolver) setting added  
+
+__Breaking change - default codec changed to Kryo5Codec__  
+
+Fixed - new Redis node isn't discovered between PubSub subscription attempts  
+Fixed - `codec`,`nettyHook`,`addressResolverGroupFactory`,`connectionListener` settings can't be defined through Micronaut config  
+Fixed - evictions metrics doesn't work for RedissonCache (thanks @Nicola Dardanis)  
+Fixed - PubSub connection isn't reused if it reached subscriptions limit before unsubscribe operation  
+Fixed - PubSub connection returns to connection pool only if subscriptions limit was reached  
+Fixed - use slf4j late-binding when logging instead of string concat (thanks @vatarasov)  
+Fixed - most of pubsub subscriptions fail to resubscribe after failover  
+Fixed - `RBatch` with `executionMode = REDIS_WRITE_ATOMIC` throws NPE in case of connection starvation  
+Fixed - `CommandDecoder.messageDecoder()` method throws NPE if `RBatch` object used with `executionMode = IN_MEMORY` (regression since 3.18.1)  
+Fixed - some scheduled tasks aren't executed (regression since 3.17.5)  
+Fixed - `RFunction` doesn't pass keys to Redis correctly (thanks @@jordanrmerrick)  
+Fixed - incorrectly reset jackson type factory (thanks @noelvo)  
+Fixed - cluster partitions parsing error isn't logged  
+
+### 30-Nov-2022 - 3.18.1 released
+
+Feature - Spring Data Redis 3.0.0 module added  
+
+Fixed - PubSub subscription in cluster sometimes doesn't apply to all nodes  
+Fixed - command replies don't match if connection pool size < 10 and at least one command failed  
+Fixed - `RLock` throws `CancellationException` continuously  
+Fixed - `None of slaves were synced` error is thrown after failover during RLock acquisition  
+Fixed - AWS Elasticache cluster failover  
+Fixed - `hRandFieldWithValues()` and `hRandField()` methods of Spring Data Redis module throw `ClassCastException`  
+Fixed - `trySetPermitsAsync()` method of RPermitExpirableSemaphore object shouldn't allow to overwrite the number of permits if value == 0 (thanks @kscaldef)  
+Fixed - `RKeys` object doesn't use `nameMapper`  
+Fixed - connection leak after master failover  
+
+### 11-Nov-2022 - 3.18.0 released
+
+Feature - Tomcat 10.1.x support  
+Feature - labels support for RTimeSeries object  
+Feature - compatibility with Spring Boot 3 (thanks @olivierboudet)  
+Feature - RxJava and Reactive interfaces for RLocalCachedMap object  
+Feature - local cache support for JsonBucket object  
+
+Improvement - StringCodec now implements JsonCodec  
+
+Fixed - `RDoubleAdder` and `RLongAdder` objects don't work with `nameMapper`  
+Fixed - `RBlockingQueue` methods should return null if negative timeout defined  
+Fixed - `RLocalCachedMap.clearLocalCacheAsync()` method shouldn't retain semaphore after invocation  
+Fixed - Spring Data Redis methods weren't implemented: `zRandMember()`, `zRandMemberWithScore()`, `zPopMin()`, `bZPopMin()`, `zPopMax()`, `bZPopMax()`, `zMScore()`, `zDiff()`, `zDiffWithScores()`, `zDiffStore()`, `zInter()`, `zInterWithScores()`, `zUnion()`, `zUnionWithScores()`, `hRandField()`, `hRandFieldWithValues()`, `copy()`, `lMove()`, `bLMove()`, `lPop()`, `rPop()`, `sMIsMember()`, `getEx()`, `getDel()`  
+Fixed - attempts to connect to the failed master after failover in cluster mode  
+Fixed - `RMapCache` `MapEntryListener` doesn't work with `nameMapper`  
+Fixed - `RJsonBucket.getKeys()` method doesn't use path parameter  
+Fixed - `RRateLimiter.getConfig().getRate()` throws NPE if it doesn't exist (thanks @Tanky-Zhang)  
+Fixed - `RTransaction` objects should be the same instances on each "get..." call  
+Fixed - `RScheduledExecutorService` cron triggers fire continuously for hours for some time zones (regression since 3.16.5)  
+Fixed - `RSortedSet.add()` throws NPE (thanks @yuwei)  
+Fixed - `RKeysReactive.getKeysByPattern()` method isn't giving all entries if downstream consumer is slow  
+Fixed - "Unable to unfreeze entry" errors in sentinel mode  
+Fixed - `JsonBucket.compareAndSet()` method with null as update value deletes whole object  
+Fixed - Redis Cluster topology scanned partially in case of DNS resolution error  
+Fixed - Slave nodes failed to pass complete initialization shouldn't be added as nodes  
+Fixed - ByteBuf leaks when one of multiple parameters can't be encoded  
+Fixed - `SearchDomainUnknownHostException` is thrown occasionally  
+
 ### 2-Oct-2022 - 3.17.7 released
 
 Improvement - Failed connection ping isn't taken in account in Redis slave health check  

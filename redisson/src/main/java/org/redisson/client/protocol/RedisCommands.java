@@ -215,6 +215,7 @@ public interface RedisCommands {
     RedisCommand<Set<Object>> SUNION = new RedisCommand<Set<Object>>("SUNION", new ObjectSetReplayDecoder<Object>());
     RedisCommand<Set<Object>> SDIFF = new RedisCommand<Set<Object>>("SDIFF", new ObjectSetReplayDecoder<Object>());
     RedisCommand<Set<Object>> SINTER = new RedisCommand<Set<Object>>("SINTER", new ObjectSetReplayDecoder<Object>());
+    RedisCommand<List<Long>> SMISMEMBER = new RedisCommand<>("SMISMEMBER", new ObjectListReplayDecoder<Long>());
 
     RedisStrictCommand<Long> LPOS = new RedisStrictCommand<>("LPOS");
     RedisCommand<Void> LSET = new RedisCommand<Void>("LSET", new VoidReplayConvertor());
@@ -397,6 +398,8 @@ public interface RedisCommands {
     RedisCommand<List<Object>> EVAL_LIST = new RedisCommand<List<Object>>("EVAL", new ObjectListReplayDecoder<Object>());
     RedisCommand<List<Object>> EVAL_LIST_REVERSE = new RedisCommand<List<Object>>("EVAL", new ObjectListReplayDecoder<>(true));
     RedisCommand<List<Integer>> EVAL_INT_LIST = new RedisCommand("EVAL", new ObjectListReplayDecoder<Integer>(), new IntegerReplayConvertor());
+
+    RedisCommand<List<Long>> EVAL_LONG_LIST = new RedisCommand("EVAL", new ObjectListReplayDecoder<Long>());
     RedisCommand<ListScanResult<Object>> EVAL_LIST_SCAN = new RedisCommand<ListScanResult<Object>>("EVAL", new ListMultiDecoder2(new ListScanResultReplayDecoder(), new ObjectListReplayDecoder<Object>()));
     RedisCommand<Set<Object>> EVAL_SET = new RedisCommand<Set<Object>>("EVAL", new ObjectSetReplayDecoder<Object>());
     RedisCommand<Object> EVAL_OBJECT = new RedisCommand<Object>("EVAL");
@@ -717,9 +720,9 @@ public interface RedisCommands {
 
     RedisCommand<List<Long>> JSON_OBJLEN_LIST = new RedisCommand("JSON.OBJLEN", new ObjectListReplayDecoder<Long>(), new LongReplayConvertor());
 
-    RedisCommand<List<String>> JSON_OBJKEYS = new RedisCommand("JSON.OBJKEYS", new StringListReplayDecoder());
+    RedisCommand<List<String>> JSON_OBJKEYS = new RedisCommand("JSON.OBJKEYS", new StringListListReplayDecoder());
 
-    RedisCommand<List<List<String>>> JSON_OBJKEYS_LIST = new RedisCommand("JSON.OBJKEYS", new StringListReplayDecoder());
+    RedisCommand<List<List<String>>> JSON_OBJKEYS_LIST = new RedisCommand("JSON.OBJKEYS", new StringListListReplayDecoder());
 
     RedisCommand<Boolean> JSON_TOGGLE = new RedisCommand<Boolean>("JSON.TOGGLE", new BooleanReplayConvertor());
 

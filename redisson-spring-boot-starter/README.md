@@ -2,7 +2,7 @@
 
 Integrates Redisson with Spring Boot library. Depends on [Spring Data Redis](https://github.com/redisson/redisson/tree/master/redisson-spring-data#spring-data-redis-integration) module.
 
-Supports Spring Boot 1.3.x - 2.7.x
+Supports Spring Boot 1.3.x - 3.0.x
 
 ## Usage
 
@@ -14,14 +14,14 @@ Maven
      <dependency>
          <groupId>org.redisson</groupId>
          <artifactId>redisson-spring-boot-starter</artifactId>
-         <version>3.17.7</version>
+         <version>3.19.0</version>
      </dependency>
 ```
 
 Gradle
 
 ```groovy
-     compile 'org.redisson:redisson-spring-boot-starter:3.17.7'
+     compile 'org.redisson:redisson-spring-boot-starter:3.19.0'
 ```
 
 
@@ -33,6 +33,7 @@ Downgrade `redisson-spring-data` module if necessary to support required Spring 
 |redisson-spring-data-17     |1.4.y              |
 |redisson-spring-data-18     |1.5.y              |
 |redisson-spring-data-2x     |2.x.y              |
+|redisson-spring-data-3x     |3.x.y              |
 
 ### 2. Add settings into `application.settings` file
 
@@ -54,13 +55,21 @@ spring:
       nodes:
 ```
 
-Using Redisson settings:
+Using Redisson config file:
 
 ```yaml
 spring:
   redis:
    redisson: 
       file: classpath:redisson.yaml
+```
+
+Using Redisson settings:
+
+```yaml
+spring:
+  redis:
+   redisson: 
       config: |
         clusterServersConfig:
           idleConnectionTimeout: 10000
@@ -92,7 +101,7 @@ spring:
           tcpNoDelay: false
         threads: 16
         nettyThreads: 32
-        codec: !<org.redisson.codec.MarshallingCodec> {}
+        codec: !<org.redisson.codec.Kryo5Codec> {}
         transportMode: "NIO"
 
 ```

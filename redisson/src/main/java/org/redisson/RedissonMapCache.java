@@ -2265,85 +2265,99 @@ public class RedissonMapCache<K, V> extends RedissonMap<K, V> implements RMapCac
             params.toArray());
     }
 
-    private MapCacheEventCodec.OSType osType;
+    private volatile MapCacheEventCodec.OSType osType;
+    private volatile Codec topicCodec;
     
     @Override
     public int addListener(MapEntryListener listener) {
-        if (listener == null) {
-            throw new NullPointerException();
-        }
-        
+        return get(addListenerAsync(listener));
+    }
+
+    @Override
+    public RFuture<Integer> addListenerAsync(MapEntryListener listener) {
+        Objects.requireNonNull(listener);
+
+        CompletionStage<MapCacheEventCodec.OSType> osTypeFuture = CompletableFuture.completedFuture(osType);
         if (osType == null) {
             RFuture<Map<String, String>> serverFuture = commandExecutor.readAsync((String) null, StringCodec.INSTANCE, RedisCommands.INFO_SERVER);
-            String os = serverFuture.toCompletableFuture().join().get("os");
-            if (os == null || os.contains("Windows")) {
-                osType = BaseEventCodec.OSType.WINDOWS;
-            } else if (os.contains("NONSTOP")) {
-                osType = BaseEventCodec.OSType.HPNONSTOP;
+            osTypeFuture = serverFuture.thenApply(res -> {
+                String os = res.get("os");
+                if (os == null || os.contains("Windows")) {
+                    osType = BaseEventCodec.OSType.WINDOWS;
+                } else if (os.contains("NONSTOP")) {
+                    osType = BaseEventCodec.OSType.HPNONSTOP;
+                }
+                topicCodec = new MapCacheEventCodec(codec, osType);
+                return osType;
+            });
+        }
+
+        CompletionStage<Integer> f = osTypeFuture.thenCompose(osType -> {
+            if (listener instanceof EntryRemovedListener) {
+                RTopic topic = RedissonTopic.createRaw(topicCodec, commandExecutor, getRemovedChannelName());
+                return topic.addListenerAsync(List.class, new MessageListener<List<Object>>() {
+                    @Override
+                    public void onMessage(CharSequence channel, List<Object> msg) {
+                        EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.REMOVED, (K) msg.get(0), (V) msg.get(1), null);
+                        ((EntryRemovedListener<K, V>) listener).onRemoved(event);
+                    }
+                });
             }
-        }
 
-        if (listener instanceof EntryRemovedListener) {
-            RTopic topic = redisson.getTopic(getRemovedChannelName(), new MapCacheEventCodec(codec, osType));
-            return topic.addListener(List.class, new MessageListener<List<Object>>() {
-                @Override
-                public void onMessage(CharSequence channel, List<Object> msg) {
-                    EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.REMOVED, (K) msg.get(0), (V) msg.get(1), null);
-                    ((EntryRemovedListener<K, V>) listener).onRemoved(event);
-                }
-            });
-        }
+            if (listener instanceof EntryCreatedListener) {
+                RTopic topic = RedissonTopic.createRaw(topicCodec, commandExecutor, getCreatedChannelName());
+                return topic.addListenerAsync(List.class, new MessageListener<List<Object>>() {
+                    @Override
+                    public void onMessage(CharSequence channel, List<Object> msg) {
+                        EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.CREATED, (K) msg.get(0), (V) msg.get(1), null);
+                        ((EntryCreatedListener<K, V>) listener).onCreated(event);
+                    }
+                });
+            }
 
-        if (listener instanceof EntryCreatedListener) {
-            RTopic topic = redisson.getTopic(getCreatedChannelName(), new MapCacheEventCodec(codec, osType));
-            return topic.addListener(List.class, new MessageListener<List<Object>>() {
-                @Override
-                public void onMessage(CharSequence channel, List<Object> msg) {
-                    EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.CREATED, (K) msg.get(0), (V) msg.get(1), null);
-                    ((EntryCreatedListener<K, V>) listener).onCreated(event);
-                }
-            });
-        }
+            if (listener instanceof EntryUpdatedListener) {
+                RTopic topic = RedissonTopic.createRaw(topicCodec, commandExecutor, getUpdatedChannelName());
+                return topic.addListenerAsync(List.class, new MessageListener<List<Object>>() {
+                    @Override
+                    public void onMessage(CharSequence channel, List<Object> msg) {
+                        EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.UPDATED, (K) msg.get(0), (V) msg.get(1), (V) msg.get(2));
+                        ((EntryUpdatedListener<K, V>) listener).onUpdated(event);
+                    }
+                });
+            }
 
-        if (listener instanceof EntryUpdatedListener) {
-            RTopic topic = redisson.getTopic(getUpdatedChannelName(), new MapCacheEventCodec(codec, osType));
-            return topic.addListener(List.class, new MessageListener<List<Object>>() {
-                @Override
-                public void onMessage(CharSequence channel, List<Object> msg) {
-                    EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.UPDATED, (K) msg.get(0), (V) msg.get(1), (V) msg.get(2));
-                    ((EntryUpdatedListener<K, V>) listener).onUpdated(event);
-                }
-            });
-        }
+            if (listener instanceof EntryExpiredListener) {
+                RTopic topic = RedissonTopic.createRaw(topicCodec, commandExecutor, getExpiredChannelName());
+                return topic.addListenerAsync(List.class, new MessageListener<List<Object>>() {
+                    @Override
+                    public void onMessage(CharSequence channel, List<Object> msg) {
+                        EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.EXPIRED, (K) msg.get(0), (V) msg.get(1), null);
+                        ((EntryExpiredListener<K, V>) listener).onExpired(event);
+                    }
+                });
+            }
 
-        if (listener instanceof EntryExpiredListener) {
-            RTopic topic = redisson.getTopic(getExpiredChannelName(), new MapCacheEventCodec(codec, osType));
-            return topic.addListener(List.class, new MessageListener<List<Object>>() {
-                @Override
-                public void onMessage(CharSequence channel, List<Object> msg) {
-                    EntryEvent<K, V> event = new EntryEvent<K, V>(RedissonMapCache.this, EntryEvent.Type.EXPIRED, (K) msg.get(0), (V) msg.get(1), null);
-                    ((EntryExpiredListener<K, V>) listener).onExpired(event);
-                }
-            });
-        }
-
-        throw new IllegalArgumentException("Wrong listener type " + listener.getClass());
+            CompletableFuture<Integer> res = new CompletableFuture<>();
+            res.completeExceptionally(new IllegalArgumentException("Wrong listener type " + listener.getClass()));
+            return res;
+        });
+        return new CompletableFutureWrapper<>(f);
     }
 
     @Override
     public void removeListener(int listenerId) {
         super.removeListener(listenerId);
-        
-        RTopic removedTopic = redisson.getTopic(getRemovedChannelName());
+
+        RTopic removedTopic = RedissonTopic.createRaw(topicCodec, commandExecutor, getRemovedChannelName());
         removedTopic.removeListener(listenerId);
 
-        RTopic createdTopic = redisson.getTopic(getCreatedChannelName());
+        RTopic createdTopic = RedissonTopic.createRaw(topicCodec, commandExecutor, getCreatedChannelName());
         createdTopic.removeListener(listenerId);
 
-        RTopic updatedTopic = redisson.getTopic(getUpdatedChannelName());
+        RTopic updatedTopic = RedissonTopic.createRaw(topicCodec, commandExecutor, getUpdatedChannelName());
         updatedTopic.removeListener(listenerId);
 
-        RTopic expiredTopic = redisson.getTopic(getExpiredChannelName());
+        RTopic expiredTopic = RedissonTopic.createRaw(topicCodec, commandExecutor, getExpiredChannelName());
         expiredTopic.removeListener(listenerId);
     }
 

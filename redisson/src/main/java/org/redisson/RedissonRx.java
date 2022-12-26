@@ -149,6 +149,12 @@ public class RedissonRx implements RedissonRxClient {
     }
 
     @Override
+    public RFencedLockRx getFencedLock(String name) {
+        RedissonFencedLock lock = new RedissonFencedLock(commandExecutor, name);
+        return RxProxyBuilder.create(commandExecutor, lock, RFencedLockRx.class);
+    }
+
+    @Override
     public RLockRx getMultiLock(RLockRx... locks) {
         RLock[] ls = Arrays.stream(locks)
                             .map(l -> new RedissonLock(commandExecutor, l.getName()))
@@ -602,6 +608,20 @@ public class RedissonRx implements RedissonRxClient {
         RMap<K, V> map = new RedissonMap<K, V>(codec, commandExecutor, name, null, options, writeBehindService);
         return RxProxyBuilder.create(commandExecutor, map, 
                 new RedissonMapRx<K, V>(map, commandExecutor), RMapRx.class);
+    }
+
+    @Override
+    public <K, V> RLocalCachedMapRx<K, V> getLocalCachedMap(String name, LocalCachedMapOptions<K, V> options) {
+        RMap<K, V> map = new RedissonLocalCachedMap<>(commandExecutor, name, options, evictionScheduler, null, writeBehindService);
+        return RxProxyBuilder.create(commandExecutor, map,
+                new RedissonMapRx<>(map, commandExecutor), RLocalCachedMapRx.class);
+    }
+
+    @Override
+    public <K, V> RLocalCachedMapRx<K, V> getLocalCachedMap(String name, Codec codec, LocalCachedMapOptions<K, V> options) {
+        RMap<K, V> map = new RedissonLocalCachedMap<>(codec, commandExecutor, name, options, evictionScheduler, null, writeBehindService);
+        return RxProxyBuilder.create(commandExecutor, map,
+                new RedissonMapRx<>(map, commandExecutor), RLocalCachedMapRx.class);
     }
 
     @Override

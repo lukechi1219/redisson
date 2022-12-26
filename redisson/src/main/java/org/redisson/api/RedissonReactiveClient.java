@@ -193,6 +193,16 @@ public interface RedissonReactiveClient {
     RLockReactive getSpinLock(String name, LockOptions.BackOff backOff);
 
     /**
+     * Returns Fenced Lock by name.
+     * <p>
+     * Implements a <b>non-fair</b> locking so doesn't guarantee an acquire order by threads.
+     *
+     * @param name name of object
+     * @return Lock object
+     */
+    RFencedLockReactive getFencedLock(String name);
+
+    /**
      * Returns MultiLock instance associated with specified <code>locks</code>
      *
      * @param locks - collection of locks
@@ -545,6 +555,31 @@ public interface RedissonReactiveClient {
      * @return Map object
      */
     <K, V> RMapReactive<K, V> getMap(String name, Codec codec, MapOptions<K, V> options);
+
+    /**
+     * Returns local cached map instance by name.
+     * Configured by parameters of options-object.
+     *
+     * @param <K> type of key
+     * @param <V> type of value
+     * @param name - name of object
+     * @param options - local map options
+     * @return LocalCachedMap object
+     */
+    <K, V> RLocalCachedMapReactive<K, V> getLocalCachedMap(String name, LocalCachedMapOptions<K, V> options);
+
+    /**
+     * Returns local cached map instance by name
+     * using provided codec. Configured by parameters of options-object.
+     *
+     * @param <K> type of key
+     * @param <V> type of value
+     * @param name - name of object
+     * @param codec - codec for keys and values
+     * @param options - local map options
+     * @return LocalCachedMap object
+     */
+    <K, V> RLocalCachedMapReactive<K, V> getLocalCachedMap(String name, Codec codec, LocalCachedMapOptions<K, V> options);
 
     /**
      * Returns set instance by name.
