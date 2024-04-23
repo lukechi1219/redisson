@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.netty.channel.EventLoopGroup;
 import org.redisson.api.NameMapper;
 import org.redisson.api.NatMapper;
 import org.redisson.api.RedissonNodeInitializer;
@@ -41,7 +42,7 @@ import org.redisson.connection.balancer.LoadBalancer;
 import java.io.*;
 import java.net.URL;
 import java.util.Scanner;
-import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -180,28 +181,33 @@ public class ConfigSupport {
     }
 
     public static ConnectionManager createConnectionManager(Config configCopy) {
-        UUID id = UUID.randomUUID();
+        ServiceManager serviceManager = new ServiceManager(configCopy);
 
+        ConnectionManager cm = null;
         if (configCopy.getMasterSlaveServersConfig() != null) {
             validate(configCopy.getMasterSlaveServersConfig());
-            return new MasterSlaveConnectionManager(configCopy.getMasterSlaveServersConfig(), configCopy, id);
+            cm = new MasterSlaveConnectionManager(configCopy.getMasterSlaveServersConfig(), serviceManager);
         } else if (configCopy.getSingleServerConfig() != null) {
             validate(configCopy.getSingleServerConfig());
-            return new SingleConnectionManager(configCopy.getSingleServerConfig(), configCopy, id);
+            cm = new SingleConnectionManager(configCopy.getSingleServerConfig(), serviceManager);
         } else if (configCopy.getSentinelServersConfig() != null) {
             validate(configCopy.getSentinelServersConfig());
-            return new SentinelConnectionManager(configCopy.getSentinelServersConfig(), configCopy, id);
+            cm = new SentinelConnectionManager(configCopy.getSentinelServersConfig(), serviceManager);
         } else if (configCopy.getClusterServersConfig() != null) {
             validate(configCopy.getClusterServersConfig());
-            return new ClusterConnectionManager(configCopy.getClusterServersConfig(), configCopy, id);
+            cm = new ClusterConnectionManager(configCopy.getClusterServersConfig(), serviceManager);
         } else if (configCopy.getReplicatedServersConfig() != null) {
             validate(configCopy.getReplicatedServersConfig());
-            return new ReplicatedConnectionManager(configCopy.getReplicatedServersConfig(), configCopy, id);
+            cm = new ReplicatedConnectionManager(configCopy.getReplicatedServersConfig(), serviceManager);
         } else if (configCopy.getConnectionManager() != null) {
-            return configCopy.getConnectionManager();
-        }else {
+            cm = configCopy.getConnectionManager();
+        }
+
+        if (cm == null) {
             throw new IllegalArgumentException("server(s) address(es) not defined!");
         }
+        cm.connect();
+        return cm;
     }
 
     private static void validate(SingleServerConfig config) {
@@ -235,6 +241,9 @@ public class ConfigSupport {
         mapper.addMixIn(NameMapper.class, ClassMixIn.class);
         mapper.addMixIn(NettyHook.class, ClassMixIn.class);
         mapper.addMixIn(CredentialsResolver.class, ClassMixIn.class);
+        mapper.addMixIn(EventLoopGroup.class, ClassMixIn.class);
+        mapper.addMixIn(ConnectionListener.class, ClassMixIn.class);
+        mapper.addMixIn(ExecutorService.class, ClassMixIn.class);
 
         FilterProvider filterProvider = new SimpleFilterProvider()
                 .addFilter("classFilter", SimpleBeanPropertyFilter.filterOutAllExcept());

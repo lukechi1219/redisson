@@ -14,14 +14,14 @@ Maven
      <dependency>
          <groupId>org.redisson</groupId>
          <artifactId>redisson-spring-boot-starter</artifactId>
-         <version>3.19.0</version>
+         <version>3.20.1</version>
      </dependency>
 ```
 
 Gradle
 
 ```groovy
-     compile 'org.redisson:redisson-spring-boot-starter:3.19.0'
+     compile 'org.redisson:redisson-spring-boot-starter:3.20.1'
 ```
 
 
@@ -48,6 +48,8 @@ spring:
     password:
     ssl: 
     timeout:
+    connectTimeout:
+    clientName:
     cluster:
       nodes:
     sentinel:
@@ -55,16 +57,25 @@ spring:
       nodes:
 ```
 
-Using Redisson config file:
+Using Redisson config file ([single mode](https://github.com/redisson/redisson/wiki/2.-Configuration#262-single-instance-yaml-config-format),
+[replicated mode](https://github.com/redisson/redisson/wiki/2.-Configuration#252-replicated-yaml-config-format),
+[cluster mode](https://github.com/redisson/redisson/wiki/2.-Configuration#242-cluster-yaml-config-format),
+[sentinel mode](https://github.com/redisson/redisson/wiki/2.-Configuration#272-sentinel-yaml-config-format),
+[proxy mode](https://github.com/redisson/redisson/wiki/2.-Configuration#292-proxy-mode-yaml-config-format))
+
 
 ```yaml
 spring:
   redis:
    redisson: 
-      file: classpath:redisson.yaml
+      config: classpath:redisson.yaml
 ```
 
-Using Redisson settings:
+Using Redisson settings ([single mode](https://github.com/redisson/redisson/wiki/2.-Configuration#262-single-instance-yaml-config-format),
+[replicated mode](https://github.com/redisson/redisson/wiki/2.-Configuration#252-replicated-yaml-config-format),
+[cluster mode](https://github.com/redisson/redisson/wiki/2.-Configuration#242-cluster-yaml-config-format),
+[sentinel mode](https://github.com/redisson/redisson/wiki/2.-Configuration#272-sentinel-yaml-config-format),
+[proxy mode](https://github.com/redisson/redisson/wiki/2.-Configuration#292-proxy-mode-yaml-config-format)):
 
 ```yaml
 spring:

@@ -50,7 +50,7 @@ public class RedissonRx implements RedissonRxClient {
 
         connectionManager = ConfigSupport.createConnectionManager(configCopy);
         RedissonObjectBuilder objectBuilder = null;
-        if (connectionManager.getCfg().isReferenceEnabled()) {
+        if (connectionManager.getServiceManager().getCfg().isReferenceEnabled()) {
             objectBuilder = new RedissonObjectBuilder(this);
         }
         commandExecutor = new CommandRxService(connectionManager, objectBuilder);
@@ -63,7 +63,7 @@ public class RedissonRx implements RedissonRxClient {
                          WriteBehindService writeBehindService, ConcurrentMap<String, ResponseEntry> responses) {
         this.connectionManager = connectionManager;
         RedissonObjectBuilder objectBuilder = null;
-        if (connectionManager.getCfg().isReferenceEnabled()) {
+        if (connectionManager.getServiceManager().getCfg().isReferenceEnabled()) {
             objectBuilder = new RedissonObjectBuilder(this);
         }
         commandExecutor = new CommandRxService(connectionManager, objectBuilder);
@@ -484,12 +484,12 @@ public class RedissonRx implements RedissonRxClient {
     
     @Override
     public RRemoteService getRemoteService() {
-        return getRemoteService("redisson_rs", connectionManager.getCodec());
+        return getRemoteService("redisson_rs", connectionManager.getServiceManager().getCfg().getCodec());
     }
 
     @Override
     public RRemoteService getRemoteService(String name) {
-        return getRemoteService(name, connectionManager.getCodec());
+        return getRemoteService(name, connectionManager.getServiceManager().getCfg().getCodec());
     }
 
     @Override
@@ -499,8 +499,8 @@ public class RedissonRx implements RedissonRxClient {
 
     @Override
     public RRemoteService getRemoteService(String name, Codec codec) {
-        String executorId = connectionManager.getId();
-        if (codec != connectionManager.getCodec()) {
+        String executorId = connectionManager.getServiceManager().getId();
+        if (codec != connectionManager.getServiceManager().getCfg().getCodec()) {
             executorId = executorId + ":" + name;
         }
         return new RedissonRemoteService(codec, name, commandExecutor, executorId, responses);
@@ -548,12 +548,12 @@ public class RedissonRx implements RedissonRxClient {
 
     @Override
     public Config getConfig() {
-        return connectionManager.getCfg();
+        return connectionManager.getServiceManager().getCfg();
     }
 
     @Override
     public NodesGroup<Node> getNodesGroup() {
-        return new RedisNodes<Node>(connectionManager, commandExecutor);
+        return new RedisNodes<Node>(connectionManager, connectionManager.getServiceManager(), commandExecutor);
     }
 
     @Override
@@ -561,7 +561,7 @@ public class RedissonRx implements RedissonRxClient {
         if (!connectionManager.isClusterMode()) {
             throw new IllegalStateException("Redisson not in cluster mode!");
         }
-        return new RedisNodes<ClusterNode>(connectionManager, commandExecutor);
+        return new RedisNodes<ClusterNode>(connectionManager, connectionManager.getServiceManager(), commandExecutor);
     }
 
     @Override
@@ -572,12 +572,12 @@ public class RedissonRx implements RedissonRxClient {
 
     @Override
     public boolean isShutdown() {
-        return connectionManager.isShutdown();
+        return connectionManager.getServiceManager().isShutdown();
     }
 
     @Override
     public boolean isShuttingDown() {
-        return connectionManager.isShuttingDown();
+        return connectionManager.getServiceManager().isShuttingDown();
     }
 
     @Override
@@ -663,7 +663,7 @@ public class RedissonRx implements RedissonRxClient {
 
     @Override
     public String getId() {
-        return commandExecutor.getConnectionManager().getId();
+        return commandExecutor.getServiceManager().getId();
     }
     
 }

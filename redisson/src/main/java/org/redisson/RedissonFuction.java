@@ -25,6 +25,7 @@ import org.redisson.misc.CompletableFutureWrapper;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -38,7 +39,7 @@ public class RedissonFuction implements RFunction {
 
     public RedissonFuction(CommandAsyncExecutor commandExecutor) {
         this.commandExecutor = commandExecutor;
-        this.codec = commandExecutor.getConnectionManager().getCodec();
+        this.codec = commandExecutor.getServiceManager().getCfg().getCodec();
     }
 
     public RedissonFuction(CommandAsyncExecutor commandExecutor, Codec codec) {
@@ -116,7 +117,7 @@ public class RedissonFuction implements RFunction {
 
     @Override
     public RFuture<Void> loadAsync(String libraryName, String code) {
-        return commandExecutor.writeAllVoidAsync(RedisCommands.FUNCTION_LOAD, "Lua", libraryName, code);
+        return commandExecutor.writeAllVoidAsync(RedisCommands.FUNCTION_LOAD, "#!lua name=" + libraryName + " \n " + code);
     }
 
     @Override
@@ -126,8 +127,8 @@ public class RedissonFuction implements RFunction {
 
     @Override
     public RFuture<Void> loadAndReplaceAsync(String libraryName, String code) {
-        return commandExecutor.writeAllVoidAsync(RedisCommands.FUNCTION_LOAD,
-                                                "Lua", libraryName, "REPLACE", code);
+        return commandExecutor.writeAllVoidAsync(RedisCommands.FUNCTION_LOAD, "REPLACE",
+                                                                                "#!lua name=" + libraryName + " \n " + code);
     }
 
     @Override
@@ -199,7 +200,8 @@ public class RedissonFuction implements RFunction {
         args.add(name);
         args.add(keys.size());
         if (keys.size() > 0) {
-            args.addAll(keys);
+            args.addAll(keys.stream().map(k -> commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) k))
+                    .collect(Collectors.toList()));
         }
         args.addAll(encode(Arrays.asList(values), codec));
         if (mode == FunctionMode.READ) {
@@ -210,7 +212,11 @@ public class RedissonFuction implements RFunction {
 
     @Override
     public <R> RFuture<R> callAsync(FunctionMode mode, String name, FunctionResult returnType, List<Object> keys, Object... values) {
-        return callAsync(null, mode, name, returnType, keys, values);
+        String key = null;
+        if (keys.size() > 0) {
+            key = commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) keys.get(0));
+        }
+        return callAsync(key, mode, name, returnType, keys, values);
     }
 
     @Override

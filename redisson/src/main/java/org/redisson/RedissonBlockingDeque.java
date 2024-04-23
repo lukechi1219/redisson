@@ -27,7 +27,6 @@ import org.redisson.api.RFuture;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.queue.DequeMoveArgs;
 import org.redisson.api.queue.DequeMoveParams;
-import org.redisson.api.queue.DequeMoveSource;
 import org.redisson.client.codec.Codec;
 import org.redisson.client.protocol.RedisCommands;
 import org.redisson.command.CommandAsyncExecutor;
@@ -268,12 +267,12 @@ public class RedissonBlockingDeque<V> extends RedissonDeque<V> implements RBlock
 
     @Override
     public int subscribeOnFirstElements(Consumer<V> consumer) {
-        return commandExecutor.getConnectionManager().getElementsSubscribeService().subscribeOnElements(this::takeFirstAsync, consumer);
+        return commandExecutor.getServiceManager().getElementsSubscribeService().subscribeOnElements(this::takeFirstAsync, consumer);
     }
 
     @Override
     public int subscribeOnLastElements(Consumer<V> consumer) {
-        return commandExecutor.getConnectionManager().getElementsSubscribeService().subscribeOnElements(this::takeLastAsync, consumer);
+        return commandExecutor.getServiceManager().getElementsSubscribeService().subscribeOnElements(this::takeLastAsync, consumer);
     }
 
     @Override
@@ -303,8 +302,7 @@ public class RedissonBlockingDeque<V> extends RedissonDeque<V> implements RBlock
 
     @Override
     public RFuture<V> moveAsync(Duration timeout, DequeMoveArgs args) {
-        DequeMoveSource source = (DequeMoveSource) args;
-        DequeMoveParams pp = source.getParams();
+        DequeMoveParams pp = (DequeMoveParams) args;
         return commandExecutor.writeAsync(getRawName(), codec, RedisCommands.BLMOVE, getRawName(),
                                                 pp.getDestName(), pp.getSourceDirection(), pp.getDestDirection(),
                                                 toSeconds(timeout.getSeconds(), TimeUnit.SECONDS));

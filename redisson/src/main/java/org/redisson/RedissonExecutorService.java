@@ -24,7 +24,6 @@ import org.redisson.client.codec.LongCodec;
 import org.redisson.client.codec.StringCodec;
 import org.redisson.client.protocol.RedisCommands;
 import org.redisson.command.CommandAsyncExecutor;
-import org.redisson.connection.ConnectionManager;
 import org.redisson.executor.*;
 import org.redisson.executor.params.*;
 import org.redisson.misc.CompletableFutureWrapper;
@@ -58,7 +57,6 @@ public class RedissonExecutorService implements RScheduledExecutorService {
     public static final int TERMINATED_STATE = 2;
     
     private final CommandAsyncExecutor commandExecutor;
-    private final ConnectionManager connectionManager;
     private final Codec codec;
     private final Redisson redisson;
     
@@ -107,16 +105,15 @@ public class RedissonExecutorService implements RScheduledExecutorService {
         super();
         this.codec = codec;
         this.commandExecutor = commandExecutor;
-        this.connectionManager = commandExecutor.getConnectionManager();
-        this.name = commandExecutor.getConnectionManager().getConfig().getNameMapper().map(name);
+        this.name = commandExecutor.getServiceManager().getConfig().getNameMapper().map(name);
         this.redisson = redisson;
         this.queueTransferService = queueTransferService;
         this.responses = responses;
 
-        if (codec == connectionManager.getCodec()) {
-            this.executorId = connectionManager.getId();
+        if (codec == commandExecutor.getServiceManager().getCfg().getCodec()) {
+            this.executorId = commandExecutor.getServiceManager().getId();
         } else {
-            this.executorId = connectionManager.getId() + ":" + RemoteExecutorServiceAsync.class.getName() + ":" + name;
+            this.executorId = commandExecutor.getServiceManager().getId() + ":" + RemoteExecutorServiceAsync.class.getName() + ":" + name;
         }
         
         remoteService = new RedissonExecutorRemoteService(codec, name, commandExecutor, executorId, responses);
@@ -242,7 +239,7 @@ public class RedissonExecutorService implements RScheduledExecutorService {
             throw new IllegalArgumentException("workers amount can't be zero");
         }
         
-        QueueTransferTask task = new QueueTransferTask(connectionManager) {
+        QueueTransferTask task = new QueueTransferTask(commandExecutor.getServiceManager()) {
             @Override
             protected RTopic getTopic() {
                 return RedissonTopic.createRaw(LongCodec.INSTANCE, commandExecutor, schedulerChannelName);
@@ -311,7 +308,7 @@ public class RedissonExecutorService implements RScheduledExecutorService {
             service.setTasksInjector(options.getTasksInjector());
         }
 
-        ExecutorService es = commandExecutor.getConnectionManager().getExecutor();
+        ExecutorService es = commandExecutor.getServiceManager().getExecutor();
         if (options.getExecutorService() != null) {
             es = options.getExecutorService();
         }
@@ -476,8 +473,10 @@ public class RedissonExecutorService implements RScheduledExecutorService {
     public void shutdown() {
         queueTransferService.remove(getName());
         remoteService.deregister(RemoteExecutorService.class);
-        workersTopic.removeListener(workersGroupListenerId);
-        
+        if (workersGroupListenerId != 0) {
+            workersTopic.removeListener(workersGroupListenerId);
+        }
+
         commandExecutor.get(commandExecutor.evalWriteAsync(getName(), LongCodec.INSTANCE, RedisCommands.EVAL_VOID,
                 "if redis.call('exists', KEYS[2]) == 0 then "
                      + "if redis.call('get', KEYS[1]) == '0' or redis.call('exists', KEYS[1]) == 0 then "
@@ -493,7 +492,7 @@ public class RedissonExecutorService implements RScheduledExecutorService {
 
     @Override
     public String getName() {
-        return commandExecutor.getConnectionManager().getConfig().getNameMapper().unmap(name);
+        return commandExecutor.getServiceManager().getConfig().getNameMapper().unmap(name);
     }
     
     @Override

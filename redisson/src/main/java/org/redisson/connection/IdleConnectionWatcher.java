@@ -16,7 +16,7 @@
 package org.redisson.connection;
 
 import io.netty.channel.ChannelFuture;
-import io.netty.util.concurrent.Future;
+import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.ScheduledFuture;
 import org.redisson.client.RedisConnection;
@@ -62,8 +62,8 @@ public class IdleConnectionWatcher {
     private final Map<ClientConnectionsEntry, List<Entry>> entries = new ConcurrentHashMap<>();
     private final ScheduledFuture<?> monitorFuture;
 
-    public IdleConnectionWatcher(ConnectionManager manager, MasterSlaveServersConfig config) {
-        monitorFuture = manager.getGroup().scheduleWithFixedDelay(() -> {
+    public IdleConnectionWatcher(EventLoopGroup group, MasterSlaveServersConfig config) {
+        monitorFuture = group.scheduleWithFixedDelay(() -> {
             long currTime = System.nanoTime();
             for (Entry entry : entries.values().stream().flatMap(m -> m.stream()).collect(Collectors.toList())) {
                 if (!validateAmount(entry)) {
@@ -83,13 +83,9 @@ public class IdleConnectionWatcher {
                     if (timeInPool > config.getIdleConnectionTimeout()
                             && validateAmount(entry)
                                 && entry.deleteHandler.apply(c)) {
-                        ChannelFuture future = c.closeAsync();
-                        future.addListener(new FutureListener<Void>() {
-                            @Override
-                            public void operationComplete(Future<Void> future) throws Exception {
-                                log.debug("Connection {} has been closed due to idle timeout. Not used for {} ms", c.getChannel(), timeInPool);
-                            }
-                        });
+                        ChannelFuture future = c.closeIdleAsync();
+                        future.addListener((FutureListener<Void>) f ->
+                                log.debug("Connection {} has been closed due to idle timeout. Not used for {} ms", c.getChannel(), timeInPool));
                     }
                 }
             }

@@ -262,7 +262,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
             if (value == null) {
                 cacheManager.getStatBean(this).addMisses(1);
                 if (config.isReadThrough()) {
-                    redisson.getConnectionManager().getExecutor().execute(() -> {
+                    redisson.getServiceManager().getExecutor().execute(() -> {
                         try {
                             V val = loadValue(key);
                             result.complete(val);
@@ -397,6 +397,21 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
 
     Long getAccessTimeout() {
         return getAccessTimeout(System.currentTimeMillis());
+    }
+
+    Map<K, V> loadValues(Iterable<? extends K> keys) {
+        Map<K, V> loaded;
+        try {
+            loaded = cacheLoader.loadAll(keys);
+        } catch (Exception ex) {
+            throw new CacheLoaderException(ex);
+        }
+        if (loaded != null) {
+            long startTime = currentNanoTime();
+            putAll(loaded);
+            cacheManager.getStatBean(this).addGetTime(currentNanoTime() - startTime);
+        }
+        return loaded;
     }
 
     V loadValue(K key) {
@@ -1035,35 +1050,34 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
                 return;
             }
 
-            Map<K, V> map = r.entrySet().stream()
+            Map<K, V> notNullEntries = r.entrySet().stream()
                                 .filter(e -> e.getValue() != null)
                                 .collect(Collectors.toMap(x -> x.getKey(), x -> x.getValue()));
 
-            cacheManager.getStatBean(this).addHits(map.size());
+            cacheManager.getStatBean(this).addHits(notNullEntries.size());
 
-            int nullValues = r.size() - map.size();
+            int nullValues = r.size() - notNullEntries.size();
             if (config.isReadThrough() && nullValues > 0) {
                 cacheManager.getStatBean(this).addMisses(nullValues);
-                commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                commandExecutor.getServiceManager().getExecutor().execute(() -> {
                     try {
-                        r.entrySet().stream()
-                            .filter(e -> e.getValue() == null)
-                            .forEach(entry -> {
-                                V value = loadValue(entry.getKey());
-                                if (value != null) {
-                                    map.put(entry.getKey(), value);
-                                }
-                            });
+                        Set<K> nullKeys = r.entrySet().stream()
+                                .filter(e -> e.getValue() == null)
+                                .map(e -> e.getKey())
+                                .collect(Collectors.toSet());
+
+                        Map<K, V> loadedMap = loadValues(nullKeys);
+                        r.putAll(loadedMap);
                     } catch (Exception exc) {
                         result.completeExceptionally(exc);
                         return;
                     }
                     cacheManager.getStatBean(this).addGetTime(currentNanoTime() - startTime);
-                    result.complete(map);
+                    result.complete(r);
                 });
             } else {
                 cacheManager.getStatBean(this).addGetTime(currentNanoTime() - startTime);
-                result.complete(map);
+                result.complete(notNullEntries);
             }
         });
         return new CompletableFutureWrapper<>(result);
@@ -1115,7 +1129,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
             return;
         }
 
-        commandExecutor.getConnectionManager().getExecutor().execute(new Runnable() {
+        commandExecutor.getServiceManager().getExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 for (K key : keys) {
@@ -1285,7 +1299,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
         }
 
         if (atomicExecution) {
-            commandExecutor.getConnectionManager().getExecutor().execute(r);
+            commandExecutor.getServiceManager().getExecutor().execute(r);
         } else {
             r.run();
         }
@@ -1653,7 +1667,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
         if (atomicExecution) {
             future.whenComplete((res, ex) -> {
                 if (config.isWriteThrough()) {
-                    commandExecutor.getConnectionManager().getExecutor().execute(r);
+                    commandExecutor.getServiceManager().getExecutor().execute(r);
                 } else {
                     result.complete(null);
                 }
@@ -1720,7 +1734,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
                 if (r) {
                     cacheManager.getStatBean(this).addPuts(1);
                     if (config.isWriteThrough()) {
-                        commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                        commandExecutor.getServiceManager().getExecutor().execute(() -> {
                             try {
                                 cacheWriter.write(new JCacheEntry<K, V>(key, value));
                             } catch (Exception e) {
@@ -1804,7 +1818,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
                             return;
                         }
 
-                        commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                        commandExecutor.getServiceManager().getExecutor().submit(() -> {
                             try {
                                 cacheWriter.delete(key);
                                 if (oldValue != null) {
@@ -1964,7 +1978,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
                         }
 
                         if (r) {
-                            commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                            commandExecutor.getServiceManager().getExecutor().submit(() -> {
                                 try {
                                     cacheWriter.delete(key);
                                 } catch (Exception e) {
@@ -2254,7 +2268,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
                 }
 
                 if (config.isWriteThrough()) {
-                    commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                    commandExecutor.getServiceManager().getExecutor().submit(() -> {
                         try {
                             cacheWriter.delete(key);
                         } catch (Exception ex) {
@@ -2476,7 +2490,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
 
                 if (res == 1) {
                     if (config.isWriteThrough()) {
-                        commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                        commandExecutor.getServiceManager().getExecutor().submit(() -> {
                             try {
                                 cacheWriter.write(new JCacheEntry<K, V>(key, newValue));
                             } catch (Exception e) {
@@ -2795,7 +2809,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
 
                 if (r) {
                     if (config.isWriteThrough()) {
-                        commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                        commandExecutor.getServiceManager().getExecutor().submit(() -> {
                             try {
                                 cacheWriter.write(new JCacheEntry<K, V>(key, value));
                             } catch (Exception e) {
@@ -2860,7 +2874,7 @@ public class JCache<K, V> extends RedissonObject implements Cache<K, V>, CacheAs
 
                 if (r != null) {
                     if (config.isWriteThrough()) {
-                        commandExecutor.getConnectionManager().getExecutor().submit(() -> {
+                        commandExecutor.getServiceManager().getExecutor().submit(() -> {
                             cacheManager.getStatBean(this).addHits(1);
                             cacheManager.getStatBean(this).addPuts(1);
                             try {

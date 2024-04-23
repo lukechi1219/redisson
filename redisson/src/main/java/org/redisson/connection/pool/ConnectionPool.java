@@ -86,7 +86,7 @@ abstract class ConnectionPool<T extends RedisConnection> {
 
         CompletableFuture<Void> initPromise = new CompletableFuture<>();
         AtomicInteger initializedConnections = new AtomicInteger(minimumIdleSize);
-        int startAmount = Math.min(2, minimumIdleSize);
+        int startAmount = Math.min(1, minimumIdleSize);
         AtomicInteger requests = new AtomicInteger(startAmount);
         for (int i = 0; i < startAmount; i++) {
             createConnection(checkFreezed, requests, entry, initPromise, minimumIdleSize, initializedConnections);
@@ -97,7 +97,7 @@ abstract class ConnectionPool<T extends RedisConnection> {
     private void createConnection(boolean checkFreezed, AtomicInteger requests, ClientConnectionsEntry entry,
                                   CompletableFuture<Void> initPromise, int minimumIdleSize, AtomicInteger initializedConnections) {
 
-        if ((checkFreezed && entry.isFreezed()) || !tryAcquireConnection(entry)) {
+        if (checkFreezed && (entry.isFreezed() || !isHealthy(entry))) {
             int totalInitializedConnections = minimumIdleSize - initializedConnections.get();
             Throwable cause = new RedisConnectionException(
                     "Unable to init enough connections amount! Only " + totalInitializedConnections + " of " + minimumIdleSize + " were initialized. Server: "
@@ -181,12 +181,12 @@ abstract class ConnectionPool<T extends RedisConnection> {
         for (Iterator<ClientConnectionsEntry> iterator = entriesCopy.iterator(); iterator.hasNext();) {
             ClientConnectionsEntry entry = iterator.next();
             if (!((!entry.isFreezed() || entry.isMasterForRead()) 
-                    && tryAcquireConnection(entry))) {
+                    && isHealthy(entry))) {
                 iterator.remove();
             }
         }
         if (!entriesCopy.isEmpty()) {
-            ClientConnectionsEntry entry = config.getLoadBalancer().getEntry(entriesCopy);
+            ClientConnectionsEntry entry = config.getLoadBalancer().getEntry(entriesCopy, command);
             return acquireConnection(command, entry);
         }
         
@@ -233,7 +233,7 @@ abstract class ConnectionPool<T extends RedisConnection> {
         return result;
     }
         
-    protected boolean tryAcquireConnection(ClientConnectionsEntry entry) {
+    private boolean isHealthy(ClientConnectionsEntry entry) {
         if (entry.getNodeType() == NodeType.SLAVE && entry.isFailed()) {
             checkForReconnect(entry, null);
             return false;
@@ -251,7 +251,7 @@ abstract class ConnectionPool<T extends RedisConnection> {
 
     private void connectTo(ClientConnectionsEntry entry, CompletableFuture<T> promise, RedisCommand<?> command) {
         if (promise.isDone()) {
-            connectionManager.getGroup().submit(() -> {
+            connectionManager.getServiceManager().getGroup().submit(() -> {
                 releaseConnection(entry);
             });
             return;
@@ -349,13 +349,10 @@ abstract class ConnectionPool<T extends RedisConnection> {
     }
 
     private void scheduleCheck(ClientConnectionsEntry entry) {
-
-        connectionManager.getConnectionEventsHub().fireDisconnect(entry.getClient().getAddr());
-
-        connectionManager.newTimeout(timeout -> {
+        connectionManager.getServiceManager().newTimeout(timeout -> {
             synchronized (entry) {
                 if (entry.getFreezeReason() != FreezeReason.RECONNECT
-                        || connectionManager.isShuttingDown()) {
+                        || connectionManager.getServiceManager().isShuttingDown()) {
                     return;
                 }
             }

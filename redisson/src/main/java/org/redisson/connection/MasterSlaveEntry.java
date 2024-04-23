@@ -63,10 +63,13 @@ public class MasterSlaveEntry {
     final MasterPubSubConnectionPool pubSubConnectionPool;
 
     final AtomicBoolean active = new AtomicBoolean(true);
-    
-    public MasterSlaveEntry(ConnectionManager connectionManager, MasterSlaveServersConfig config) {
+    final IdleConnectionWatcher idleConnectionWatcher;
+
+    public MasterSlaveEntry(ConnectionManager connectionManager, IdleConnectionWatcher idleConnectionWatcher,
+                            MasterSlaveServersConfig config) {
         this.connectionManager = connectionManager;
         this.config = config;
+        this.idleConnectionWatcher = idleConnectionWatcher;
 
         slaveBalancer = new LoadBalancerManager(config, connectionManager, this);
         writeConnectionPool = new MasterConnectionPool(config, connectionManager, this);
@@ -124,10 +127,9 @@ public class MasterSlaveEntry {
                     client,
                     config.getMasterConnectionMinimumIdleSize(),
                     config.getMasterConnectionPoolSize(),
-                    config.getSubscriptionConnectionMinimumIdleSize(),
-                    config.getSubscriptionConnectionPoolSize(),
-                    connectionManager,
-                    NodeType.MASTER);
+                    idleConnectionWatcher,
+                    NodeType.MASTER,
+                    config);
 
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             if (!config.checkSkipSlavesInit() && !slaveBalancer.contains(client.getAddr())) {
@@ -287,7 +289,7 @@ public class MasterSlaveEntry {
 
         MasterSlaveEntry entry = connectionManager.getEntry(key);
         if (entry == null) {
-            connectionManager.newTimeout(timeout ->
+            connectionManager.getServiceManager().newTimeout(timeout ->
                     reattachBlockingQueue(commandData), 1, TimeUnit.SECONDS);
             return;
         }
@@ -295,7 +297,7 @@ public class MasterSlaveEntry {
         CompletableFuture<RedisConnection> newConnectionFuture = entry.connectionWriteOp(commandData.getCommand());
         newConnectionFuture.whenComplete((newConnection, e) -> {
             if (e != null) {
-                connectionManager.newTimeout(timeout ->
+                connectionManager.getServiceManager().newTimeout(timeout ->
                         reattachBlockingQueue(commandData), 1, TimeUnit.SECONDS);
                 return;
             }
@@ -308,7 +310,7 @@ public class MasterSlaveEntry {
             ChannelFuture channelFuture = newConnection.send(commandData);
             channelFuture.addListener(future -> {
                 if (!future.isSuccess()) {
-                    connectionManager.newTimeout(timeout ->
+                    connectionManager.getServiceManager().newTimeout(timeout ->
                             reattachBlockingQueue(commandData), 1, TimeUnit.SECONDS);
                     return;
                 }
@@ -362,8 +364,9 @@ public class MasterSlaveEntry {
             ClientConnectionsEntry entry = new ClientConnectionsEntry(client,
                     config.getSlaveConnectionMinimumIdleSize(),
                     config.getSlaveConnectionPoolSize(),
-                    config.getSubscriptionConnectionMinimumIdleSize(),
-                    config.getSubscriptionConnectionPoolSize(), connectionManager, nodeType);
+                    idleConnectionWatcher,
+                    nodeType,
+                    config);
             if (freezed) {
                 synchronized (entry) {
                     entry.setFreezeReason(FreezeReason.SYSTEM);
@@ -397,6 +400,10 @@ public class MasterSlaveEntry {
 
     public ClientConnectionsEntry getEntry(RedisURI addr) {
         return slaveBalancer.getEntry(addr);
+    }
+
+    public boolean isInit() {
+        return masterEntry != null;
     }
 
     public RedisClient getClient() {
@@ -591,7 +598,11 @@ public class MasterSlaveEntry {
         return slaveBalancer.getConnection(command, client);
     }
 
-    public CompletableFuture<RedisPubSubConnection> nextPubSubConnection() {
+    public CompletableFuture<RedisPubSubConnection> nextPubSubConnection(ClientConnectionsEntry entry) {
+        if (entry != null) {
+            return slaveBalancer.nextPubSubConnection(entry);
+        }
+
         if (config.getSubscriptionMode() == SubscriptionMode.MASTER) {
             return pubSubConnectionPool.get();
         }

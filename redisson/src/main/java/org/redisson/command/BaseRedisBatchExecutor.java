@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class BaseRedisBatchExecutor<V, R> extends RedisExecutor<V, R> {
 
-    final ConcurrentMap<MasterSlaveEntry, Entry> commands;
+    final ConcurrentMap<NodeSource, Entry> commands;
     final BatchOptions options;
     final AtomicInteger index;
     
@@ -49,7 +49,7 @@ public class BaseRedisBatchExecutor<V, R> extends RedisExecutor<V, R> {
     public BaseRedisBatchExecutor(boolean readOnlyMode, NodeSource source, Codec codec, RedisCommand<V> command,
                                   Object[] params, CompletableFuture<R> mainPromise, boolean ignoreRedirect,
                                   ConnectionManager connectionManager, RedissonObjectBuilder objectBuilder,
-                                  ConcurrentMap<MasterSlaveEntry, Entry> commands,
+                                  ConcurrentMap<NodeSource, Entry> commands,
                                   BatchOptions options, AtomicInteger index, AtomicBoolean executed, RedissonObjectBuilder.ReferenceType referenceType,
                                   boolean noRetry) {
         
@@ -74,34 +74,27 @@ public class BaseRedisBatchExecutor<V, R> extends RedisExecutor<V, R> {
         }
     }
 
-    protected final MasterSlaveEntry getEntry(NodeSource source) {
+    protected final MasterSlaveEntry getEntry() {
         if (source.getSlot() != null) {
-            MasterSlaveEntry entry = connectionManager.getEntry(source.getSlot());
+            entry = connectionManager.getWriteEntry(source.getSlot());
             if (entry == null) {
-                throw connectionManager.createNodeNotFoundException(source);
+                throw connectionManager.getServiceManager().createNodeNotFoundException(source);
             }
             return entry;
         }
-        return source.getEntry();
+        entry = source.getEntry();
+        return entry;
     }
     
     protected final void addBatchCommandData(Object[] batchParams) {
-        MasterSlaveEntry msEntry = getEntry(source);
-        Entry entry = commands.get(msEntry);
-        if (entry == null) {
-            entry = new Entry();
-            Entry oldEntry = commands.putIfAbsent(msEntry, entry);
-            if (oldEntry != null) {
-                entry = oldEntry;
-            }
-        }
+        Entry entry = commands.computeIfAbsent(source, k -> new Entry());
 
         if (!readOnlyMode) {
             entry.setReadOnlyMode(false);
         }
 
         Codec codecToUse = getCodec(codec);
-        BatchCommandData<V, R> commandData = new BatchCommandData<V, R>(mainPromise, codecToUse, command, batchParams, index.incrementAndGet());
+        BatchCommandData<V, R> commandData = new BatchCommandData<>(mainPromise, codecToUse, command, batchParams, index.incrementAndGet());
         entry.getCommands().add(commandData);
     }
         

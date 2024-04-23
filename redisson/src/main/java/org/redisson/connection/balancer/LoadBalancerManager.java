@@ -64,7 +64,7 @@ public class LoadBalancerManager {
         ClientConnectionsEntry entry = getEntry(address);
         if (entry != null) {
             if (connectionManager.isClusterMode()) {
-                entry.getClient().getConfig().setReadOnly(nodeType == NodeType.SLAVE && connectionManager.getConfig().getReadMode() != ReadMode.MASTER);
+                entry.getClient().getConfig().setReadOnly(nodeType == NodeType.SLAVE && connectionManager.getServiceManager().getConfig().getReadMode() != ReadMode.MASTER);
             }
             entry.setNodeType(nodeType);
         }
@@ -162,7 +162,7 @@ public class LoadBalancerManager {
                         if (e != null) {
                             log.error("Unable to unfreeze entry: {}", entry, e);
                             entry.setInitialized(false);
-                            connectionManager.newTimeout(t -> {
+                            connectionManager.getServiceManager().newTimeout(t -> {
                                 unfreeze(entry, freezeReason);
                             }, 1, TimeUnit.SECONDS);
                             return;
@@ -253,6 +253,10 @@ public class LoadBalancerManager {
         return pubSubConnectionPool.get();
     }
 
+    public CompletableFuture<RedisPubSubConnection> nextPubSubConnection(ClientConnectionsEntry entry) {
+        return pubSubConnectionPool.get(entry);
+    }
+
     public boolean contains(InetSocketAddress addr) {
         return getEntry(addr) != null;
     }
@@ -299,7 +303,7 @@ public class LoadBalancerManager {
         f.completeExceptionally(exception);
         return f;
     }
-    
+
     public CompletableFuture<RedisConnection> getConnection(RedisCommand<?> command, RedisClient client) {
         ClientConnectionsEntry entry = getEntry(client);
         if (entry != null) {

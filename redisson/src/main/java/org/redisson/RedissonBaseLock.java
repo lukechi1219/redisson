@@ -21,6 +21,7 @@ import org.redisson.api.BatchOptions;
 import org.redisson.api.BatchResult;
 import org.redisson.api.RFuture;
 import org.redisson.api.RLock;
+import org.redisson.client.RedisException;
 import org.redisson.client.codec.Codec;
 import org.redisson.client.codec.LongCodec;
 import org.redisson.client.protocol.RedisCommand;
@@ -29,14 +30,15 @@ import org.redisson.client.protocol.convertor.IntegerReplayConvertor;
 import org.redisson.client.protocol.decoder.MapValueDecoder;
 import org.redisson.command.CommandAsyncExecutor;
 import org.redisson.command.CommandBatchService;
-import org.redisson.connection.MasterSlaveEntry;
 import org.redisson.misc.CompletableFutureWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
+import java.util.function.Supplier;
 
 /**
  * Base class for implementing distributed locks
@@ -106,8 +108,8 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
     public RedissonBaseLock(CommandAsyncExecutor commandExecutor, String name) {
         super(commandExecutor, name);
         this.commandExecutor = commandExecutor;
-        this.id = commandExecutor.getConnectionManager().getId();
-        this.internalLockLeaseTime = commandExecutor.getConnectionManager().getCfg().getLockWatchdogTimeout();
+        this.id = commandExecutor.getServiceManager().getId();
+        this.internalLockLeaseTime = commandExecutor.getServiceManager().getCfg().getLockWatchdogTimeout();
         this.entryName = id + ":" + name;
     }
 
@@ -125,7 +127,7 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
             return;
         }
         
-        Timeout task = commandExecutor.getConnectionManager().newTimeout(new TimerTask() {
+        Timeout task = commandExecutor.getServiceManager().newTimeout(new TimerTask() {
             @Override
             public void run(Timeout timeout) throws Exception {
                 ExpirationEntry ent = EXPIRATION_RENEWAL_MAP.get(getEntryName());
@@ -206,14 +208,13 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
     }
 
     protected <T> RFuture<T> evalWriteAsync(String key, Codec codec, RedisCommand<T> evalCommandType, String script, List<Object> keys, Object... params) {
-        MasterSlaveEntry entry = commandExecutor.getConnectionManager().getEntry(getRawName());
-
         CompletionStage<Map<String, String>> replicationFuture = CompletableFuture.completedFuture(Collections.emptyMap());
-        if (!(commandExecutor instanceof CommandBatchService) && entry != null && entry.getAvailableSlaves() > 0) {
-            replicationFuture = commandExecutor.writeAsync(entry, null, RedisCommands.INFO_REPLICATION);
+        if (!(commandExecutor instanceof CommandBatchService)
+                && !commandExecutor.getServiceManager().getConfig().checkSkipSlavesInit()) {
+            replicationFuture = commandExecutor.writeAsync(getRawName(), RedisCommands.INFO_REPLICATION);
         }
         CompletionStage<T> resFuture = replicationFuture.thenCompose(r -> {
-            Integer availableSlaves = Integer.valueOf(r.getOrDefault("connected_slaves", "0"));
+            int availableSlaves = Integer.parseInt(r.getOrDefault("connected_slaves", "0"));
 
             CommandBatchService executorService = createCommandBatchService(availableSlaves);
             RFuture<T> result = executorService.evalWriteAsync(key, codec, evalCommandType, script, keys, params);
@@ -226,7 +227,7 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
                 if (ex != null) {
                     throw new CompletionException(ex);
                 }
-                if (commandExecutor.getConnectionManager().getCfg().isCheckLockSyncedSlaves()
+                if (commandExecutor.getServiceManager().getCfg().isCheckLockSyncedSlaves()
                         && res.getSyncedSlaves() == 0 && availableSlaves > 0) {
                     throw new CompletionException(
                             new IllegalStateException("None of slaves were synced"));
@@ -317,14 +318,51 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
         return unlockAsync(threadId);
     }
 
+    protected final <T> RFuture<T> execute(Supplier<RFuture<T>> supplier) {
+        CompletableFuture<T> result = new CompletableFuture<>();
+        int retryAttempts = commandExecutor.getServiceManager().getConfig().getRetryAttempts();
+        AtomicInteger attempts = new AtomicInteger(retryAttempts);
+        execute(attempts, result, supplier);
+        return new CompletableFutureWrapper<>(result);
+    }
+
+    private <T> void execute(AtomicInteger attempts, CompletableFuture<T> result, Supplier<RFuture<T>> supplier) {
+        RFuture<T> future = supplier.get();
+        future.whenComplete((r, e) -> {
+            if (e != null) {
+                if (e.getCause().getMessage().equals("None of slaves were synced")) {
+                    if (attempts.decrementAndGet() < 0) {
+                        result.completeExceptionally(e);
+                        return;
+                    }
+
+                    commandExecutor.getServiceManager().newTimeout(t -> execute(attempts, result, supplier),
+                            commandExecutor.getServiceManager().getConfig().getRetryInterval(), TimeUnit.MILLISECONDS);
+                    return;
+                }
+
+                result.completeExceptionally(e);
+                return;
+            }
+
+            result.complete(r);
+        });
+    }
+
     @Override
     public RFuture<Void> unlockAsync(long threadId) {
-        RFuture<Boolean> future = unlockInnerAsync(threadId);
+        return execute(() -> unlockAsync0(threadId));
+    }
 
+    private RFuture<Void> unlockAsync0(long threadId) {
+        CompletionStage<Boolean> future = unlockInnerAsync(threadId);
         CompletionStage<Void> f = future.handle((opStatus, e) -> {
             cancelExpirationRenewal(threadId);
 
             if (e != null) {
+                if (e instanceof CompletionException) {
+                    throw (CompletionException) e;
+                }
                 throw new CompletionException(e);
             }
             if (opStatus == null) {
@@ -339,5 +377,88 @@ public abstract class RedissonBaseLock extends RedissonExpirable implements RLoc
         return new CompletableFutureWrapper<>(f);
     }
 
+    @Override
+    public void unlock() {
+        try {
+            get(unlockAsync(Thread.currentThread().getId()));
+        } catch (RedisException e) {
+            if (e.getCause() instanceof IllegalMonitorStateException) {
+                throw (IllegalMonitorStateException) e.getCause();
+            } else {
+                throw e;
+            }
+        }
+
+//        Future<Void> future = unlockAsync();
+//        future.awaitUninterruptibly();
+//        if (future.isSuccess()) {
+//            return;
+//        }
+//        if (future.cause() instanceof IllegalMonitorStateException) {
+//            throw (IllegalMonitorStateException)future.cause();
+//        }
+//        throw commandExecutor.convertException(future);
+    }
+
+    @Override
+    public boolean forceUnlock() {
+        return get(forceUnlockAsync());
+    }
+
     protected abstract RFuture<Boolean> unlockInnerAsync(long threadId);
+
+    @Override
+    public RFuture<Void> lockAsync() {
+        return lockAsync(-1, null);
+    }
+
+    @Override
+    public RFuture<Void> lockAsync(long leaseTime, TimeUnit unit) {
+        long currentThreadId = Thread.currentThread().getId();
+        return lockAsync(leaseTime, unit, currentThreadId);
+    }
+
+    @Override
+    public RFuture<Void> lockAsync(long currentThreadId) {
+        return lockAsync(-1, null, currentThreadId);
+    }
+
+    @Override
+    public RFuture<Boolean> tryLockAsync() {
+        return tryLockAsync(Thread.currentThread().getId());
+    }
+
+    @Override
+    public RFuture<Boolean> tryLockAsync(long waitTime, TimeUnit unit) {
+        return tryLockAsync(waitTime, -1, unit);
+    }
+
+    @Override
+    public RFuture<Boolean> tryLockAsync(long waitTime, long leaseTime, TimeUnit unit) {
+        long currentThreadId = Thread.currentThread().getId();
+        return tryLockAsync(waitTime, leaseTime, unit, currentThreadId);
+    }
+
+    protected <T> CompletionStage<T> handleNoSync(long threadId, CompletionStage<T> ttlRemainingFuture) {
+        CompletionStage<T> s = ttlRemainingFuture.handle((r, ex) -> {
+            if (ex != null) {
+                if (ex.getCause().getMessage().equals("None of slaves were synced")) {
+                    return unlockInnerAsync(threadId).handle((r1, e) -> {
+                        if (e != null) {
+                            if (e.getCause().getMessage().equals("None of slaves were synced")) {
+                                throw new CompletionException(ex.getCause());
+                            }
+                            e.getCause().addSuppressed(ex.getCause());
+                        }
+                        throw new CompletionException(ex.getCause());
+                    });
+                } else {
+                    throw new CompletionException(ex.getCause());
+                }
+            }
+            return CompletableFuture.completedFuture(r);
+        }).thenCompose(f -> (CompletionStage<T>) f);
+        return s;
+    }
+
 }

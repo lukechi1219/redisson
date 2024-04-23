@@ -200,11 +200,11 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
         RLock lock = getLock(key);
         long threadId = Thread.currentThread().getId();
         CompletionStage<V> f = lock.lockAsync(threadId).thenCompose(r -> {
-            RFuture<V> oldValueFuture = getAsync(key);
+            RFuture<V> oldValueFuture = getAsync(key, threadId);
             return oldValueFuture.thenCompose(oldValue -> {
                 CompletableFuture<V> newValuePromise = new CompletableFuture<>();
                 if (oldValue != null) {
-                    commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                    commandExecutor.getServiceManager().getExecutor().execute(() -> {
                         V newValue;
                         try {
                             newValue = remappingFunction.apply(oldValue, value);
@@ -249,10 +249,10 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
         long threadId = Thread.currentThread().getId();
         CompletionStage<V> f = lock.lockAsync(threadId)
                 .thenCompose(r -> {
-                RFuture<V> oldValueFuture = getAsync(key);
+                RFuture<V> oldValueFuture = getAsync(key, threadId);
                 return oldValueFuture.thenCompose(oldValue -> {
                     CompletableFuture<V> result = new CompletableFuture<>();
-                    commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                    commandExecutor.getServiceManager().getExecutor().execute(() -> {
                         V newValue;
                         try {
                             newValue = remappingFunction.apply(key, oldValue);
@@ -341,14 +341,14 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
         long threadId = Thread.currentThread().getId();
         CompletionStage<V> f = lock.lockAsync(threadId)
                 .thenCompose(r -> {
-                    RFuture<V> oldValueFuture = getAsync(key);
+                    RFuture<V> oldValueFuture = getAsync(key, threadId);
                     return oldValueFuture.thenCompose(oldValue -> {
                         if (oldValue != null) {
                             return CompletableFuture.completedFuture(oldValue);
                         }
 
                         CompletableFuture<V> result = new CompletableFuture<>();
-                        commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                        commandExecutor.getServiceManager().getExecutor().execute(() -> {
                             V newValue;
                             try {
                                 newValue = mappingFunction.apply(key);
@@ -418,14 +418,14 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
         long threadId = Thread.currentThread().getId();
         CompletionStage<V> f = lock.lockAsync(threadId)
                 .thenCompose(r -> {
-                    RFuture<V> oldValueFuture = getAsync(key);
+                    RFuture<V> oldValueFuture = getAsync(key, threadId);
                     return oldValueFuture.thenCompose(oldValue -> {
                         if (oldValue == null) {
                             return CompletableFuture.completedFuture(null);
                         }
 
                         CompletableFuture<V> result = new CompletableFuture<>();
-                        commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                        commandExecutor.getServiceManager().getExecutor().execute(() -> {
                             V newValue;
                             try {
                                 newValue = remappingFunction.apply(key, oldValue);
@@ -736,7 +736,7 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
             if (condition.apply(res)) {
                 if (options.getWriter() != null) {
                     CompletableFuture<M> promise = new CompletableFuture<>();
-                    commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                    commandExecutor.getServiceManager().getExecutor().execute(() -> {
                         try {
                             if (task instanceof MapWriterTask.Add) {
                                 options.getWriter().write(task.getMap());
@@ -1161,7 +1161,12 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
     }
     
     @Override
-    public RFuture<V> getAsync(K key) {
+    public final RFuture<V> getAsync(K key) {
+        long threadId = Thread.currentThread().getId();
+        return getAsync(key, threadId);
+    }
+
+    protected RFuture<V> getAsync(K key, long threadId) {
         checkKey(key);
 
         RFuture<V> future = getOperationAsync(key);
@@ -1169,7 +1174,6 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
             return future;
         }
 
-        long threadId = Thread.currentThread().getId();
         CompletionStage<V> f = future.thenCompose(res -> {
             if (res == null) {
                 return loadValue(key, false, threadId);
@@ -1421,7 +1425,7 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
             } else {
                 if (options.getWriter() != null) {
                     CompletableFuture<Long> future = new CompletableFuture<>();
-                    commandExecutor.getConnectionManager().getExecutor().execute(() -> {
+                    commandExecutor.getServiceManager().getExecutor().execute(() -> {
                         try {
                             options.getWriter().delete(deletedKeys);
                         } catch (Exception ex) {
@@ -1704,7 +1708,7 @@ public class RedissonMap<K, V> extends RedissonExpirable implements RMap<K, V> {
     private CompletableFuture<V> loadValue(K key, RLock lock, long threadId) {
         if (options.getLoader() != null) {
             CompletableFuture<V> result = new CompletableFuture<>();
-            commandExecutor.getConnectionManager().getExecutor().execute(new Runnable() {
+            commandExecutor.getServiceManager().getExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     V value;

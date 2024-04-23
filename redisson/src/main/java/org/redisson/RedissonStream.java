@@ -201,7 +201,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
     @Override
     public RFuture<Map<String, Map<StreamMessageId, Map<K, V>>>> readGroupAsync(String groupName, String consumerName, StreamMultiReadGroupArgs args) {
-        StreamReadGroupParams rp = ((StreamReadGroupSource) args).getParams();
+        StreamMultiReadGroupParams rp = (StreamMultiReadGroupParams) args;
 
         List<Object> params = new ArrayList<>();
         params.add("GROUP");
@@ -215,7 +215,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
         if (rp.getTimeout() != null) {
             params.add("BLOCK");
-            params.add(toSeconds(rp.getTimeout().getSeconds(), TimeUnit.SECONDS)*1000);
+            params.add(rp.getTimeout().toMillis());
         }
 
         if (rp.isNoAck()) {
@@ -244,7 +244,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
     @Override
     public RFuture<Map<StreamMessageId, Map<K, V>>> readGroupAsync(String groupName, String consumerName, StreamReadGroupArgs args) {
-        StreamReadGroupParams rp = ((StreamReadGroupSource) args).getParams();
+        StreamReadGroupParams rp = (StreamReadGroupParams) args;
 
         List<Object> params = new ArrayList<>();
         params.add("GROUP");
@@ -258,7 +258,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
         if (rp.getTimeout() != null) {
             params.add("BLOCK");
-            params.add(toSeconds(rp.getTimeout().getSeconds(), TimeUnit.SECONDS)*1000);
+            params.add(rp.getTimeout().toMillis());
         }
 
         if (rp.isNoAck()) {
@@ -348,7 +348,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
         
         if (timeout > 0) {
             params.add("BLOCK");
-            params.add(toSeconds(timeout, unit)*1000);
+            params.add(unit.toMillis(timeout));
         }
         
         params.add("STREAMS");
@@ -521,7 +521,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
         
         if (timeout > 0) {
             params.add("BLOCK");
-            params.add(toSeconds(timeout, unit)*1000);
+            params.add(unit.toMillis(timeout));
         }
         
         params.add("STREAMS");
@@ -655,7 +655,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
     @Override
     public RFuture<Map<String, Map<StreamMessageId, Map<K, V>>>> readAsync(StreamMultiReadArgs args) {
-        StreamReadParams rp = ((StreamReadSource) args).getParams();
+        StreamMultiReadParams rp = (StreamMultiReadParams) args;
 
         List<Object> params = new ArrayList<>();
         if (rp.getCount() > 0) {
@@ -665,7 +665,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
         if (rp.getTimeout() != null) {
             params.add("BLOCK");
-            params.add(toSeconds(rp.getTimeout().getSeconds(), TimeUnit.SECONDS)*1000);
+            params.add(rp.getTimeout().toMillis());
         }
 
         params.add("STREAMS");
@@ -690,7 +690,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
     @Override
     public RFuture<Map<StreamMessageId, Map<K, V>>> readAsync(StreamReadArgs args) {
-        StreamReadParams rp = ((StreamReadSource) args).getParams();
+        StreamReadParams rp = (StreamReadParams) args;
 
         List<Object> params = new ArrayList<Object>();
         if (rp.getCount() > 0) {
@@ -700,7 +700,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
 
         if (rp.getTimeout() != null) {
             params.add("BLOCK");
-            params.add(toSeconds(rp.getTimeout().getSeconds(), TimeUnit.SECONDS)*1000);
+            params.add(rp.getTimeout().toMillis());
         }
 
         params.add("STREAMS");
@@ -862,7 +862,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
         
         if (timeout > 0) {
             params.add("BLOCK");
-            params.add(toSeconds(timeout, unit)*1000);
+            params.add(unit.toMillis(timeout));
         }
         
         params.add("STREAMS");
@@ -901,8 +901,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
     }
 
     public <R> RFuture<R> addCustomAsync(StreamMessageId id, StreamAddArgs<K, V> args) {
-        StreamAddArgsSource<K, V> source = (StreamAddArgsSource<K, V>) args;
-        StreamAddParams<K, V> pps = source.getParams();
+        StreamAddParams<K, V> pps = (StreamAddParams<K, V>) args;
 
         List<Object> params = new LinkedList<Object>();
         params.add(getRawName());
@@ -1047,7 +1046,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
         
         if (timeout > 0) {
             params.add("BLOCK");
-            params.add(toSeconds(timeout, unit)*1000);
+            params.add(unit.toMillis(timeout));
         }
         
         params.add("STREAMS");
@@ -1379,8 +1378,7 @@ public class RedissonStream<K, V> extends RedissonExpirable implements RStream<K
     }
 
     private RFuture<Long> trimAsync(StreamTrimArgs args, boolean trimStrict) {
-        StreamTrimArgsSource source = (StreamTrimArgsSource) args;
-        StreamTrimParams pps = source.getParams();
+        StreamTrimParams pps = (StreamTrimParams) args;
 
         List<Object> params = new LinkedList<>();
         params.add(getRawName());

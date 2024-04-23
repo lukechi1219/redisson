@@ -45,9 +45,12 @@ public class RedisNodes<N extends Node> implements NodesGroup<N> {
     final ConnectionManager connectionManager;
     final CommandAsyncExecutor commandExecutor;
 
-    public RedisNodes(ConnectionManager connectionManager, CommandAsyncExecutor commandExecutor) {
+    final ServiceManager serviceManager;
+
+    public RedisNodes(ConnectionManager connectionManager, ServiceManager serviceManager, CommandAsyncExecutor commandExecutor) {
         this.connectionManager = connectionManager;
         this.commandExecutor = commandExecutor;
+        this.serviceManager = serviceManager;
     }
 
     @Override
@@ -136,7 +139,7 @@ public class RedisNodes<N extends Node> implements NodesGroup<N> {
             Thread.currentThread().interrupt();
         }
 
-        if (System.currentTimeMillis() - time >= connectionManager.getConfig().getConnectTimeout()) {
+        if (System.currentTimeMillis() - time >= connectionManager.getServiceManager().getConfig().getConnectTimeout()) {
             for (Entry<RedisConnection, RFuture<String>> entry : result.entrySet()) {
                 entry.getKey().closeAsync();
             }
@@ -171,12 +174,12 @@ public class RedisNodes<N extends Node> implements NodesGroup<N> {
 
     @Override
     public int addConnectionListener(ConnectionListener connectionListener) {
-        return connectionManager.getConnectionEventsHub().addListener(connectionListener);
+        return serviceManager.getConnectionEventsHub().addListener(connectionListener);
     }
 
     @Override
     public void removeConnectionListener(int listenerId) {
-        connectionManager.getConnectionEventsHub().removeListener(listenerId);
+        serviceManager.getConnectionEventsHub().removeListener(listenerId);
     }
 
 }

@@ -243,7 +243,7 @@ public class RedissonLocalCachedMap<K, V> extends RedissonMap<K, V> implements R
     }
     
     @Override
-    public RFuture<V> getAsync(Object key) {
+    protected RFuture<V> getAsync(K key, long threadId) {
         checkKey(key);
 
         CacheKey cacheKey = localCacheView.toCacheKey(key);
@@ -257,7 +257,7 @@ public class RedissonLocalCachedMap<K, V> extends RedissonMap<K, V> implements R
                 return new CompletableFutureWrapper((Void) null);
             }
 
-            CompletableFuture<V> future = loadValue((K) key, false);
+            CompletableFuture<V> future = loadValue((K) key, false, threadId);
             CompletableFuture<V> f = future.thenApply(value -> {
                 if (storeCacheMiss || value != null) {
                     cachePut(cacheKey, key, value);
@@ -267,7 +267,7 @@ public class RedissonLocalCachedMap<K, V> extends RedissonMap<K, V> implements R
             return new CompletableFutureWrapper<>(f);
         }
 
-        RFuture<V> future = super.getAsync((K) key);
+        RFuture<V> future = super.getAsync((K) key, threadId);
         CompletionStage<V> result = future.thenApply(value -> {
             if (storeCacheMiss || value != null) {
                 cachePut(cacheKey, key, value);
@@ -1260,5 +1260,29 @@ public class RedissonLocalCachedMap<K, V> extends RedissonMap<K, V> implements R
     public Map<K, V> getCachedMap() {
         return localCacheView.getCachedMap();
     }
-    
+
+    @Override
+    public Set<K> keySet(String pattern, int count) {
+        if (storeMode == LocalCachedMapOptions.StoreMode.LOCALCACHE) {
+            return cachedKeySet();
+        }
+        return super.keySet(pattern, count);
+    }
+
+    @Override
+    public Collection<V> values(String keyPattern, int count) {
+        if (storeMode == LocalCachedMapOptions.StoreMode.LOCALCACHE) {
+            return cachedValues();
+        }
+        return super.values(keyPattern, count);
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet(String keyPattern, int count) {
+        if (storeMode == LocalCachedMapOptions.StoreMode.LOCALCACHE) {
+            return cachedEntrySet();
+        }
+        return super.entrySet(keyPattern, count);
+    }
+
 }

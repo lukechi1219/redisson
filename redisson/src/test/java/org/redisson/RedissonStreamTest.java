@@ -18,8 +18,6 @@ public class RedissonStreamTest extends BaseTest {
 
     @Test
     public void testEmptyMap() {
-        Assumptions.assumeTrue(RedisRunner.getDefaultRedisServerInstance().getRedisVersion().compareTo("6.2.0") > 0);
-
         RStream<Object, Object> stream = redisson.getStream("stream");
         stream.createGroup("group");
         stream.add(StreamAddArgs.entry("key", "value"));
@@ -221,7 +219,7 @@ public class RedissonStreamTest extends BaseTest {
     }
 
     @Test
-    public void testClaim() {
+    public void testClaim() throws InterruptedException {
         RStream<String, String> stream = redisson.getStream("test");
 
         stream.add(StreamAddArgs.entry("0", "0"));
@@ -239,7 +237,9 @@ public class RedissonStreamTest extends BaseTest {
         
         Map<StreamMessageId, Map<String, String>> s2 = stream.readGroup("testGroup", "consumer2", StreamReadGroupArgs.neverDelivered());
         assertThat(s2.size()).isEqualTo(2);
-        
+
+        Thread.sleep(5);
+
         Map<StreamMessageId, Map<String, String>> res = stream.claim("testGroup", "consumer1", 1, TimeUnit.MILLISECONDS, id3, id4);
         assertThat(res.size()).isEqualTo(2);
         assertThat(res.keySet()).containsExactly(id3, id4);
@@ -268,6 +268,8 @@ public class RedissonStreamTest extends BaseTest {
 
         Map<StreamMessageId, Map<String, String>> s2 = stream.readGroup("testGroup3", "consumer2", StreamReadGroupArgs.neverDelivered());
         assertThat(s2.size()).isEqualTo(2);
+
+        Thread.sleep(5);
 
         FastAutoClaimResult res = stream.fastAutoClaim("testGroup3", "consumer1", 1, TimeUnit.MILLISECONDS, id3, 10);
         assertThat(res.getNextId()).isEqualTo(new StreamMessageId(0, 0));

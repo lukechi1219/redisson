@@ -81,7 +81,7 @@ public class RedissonTest extends BaseTest {
         }
 
         ex.shutdown();
-        assertThat(ex.awaitTermination(7, TimeUnit.SECONDS)).isTrue();
+        assertThat(ex.awaitTermination(8, TimeUnit.SECONDS)).isTrue();
         inst.shutdown();
     }
 
@@ -332,13 +332,23 @@ public class RedissonTest extends BaseTest {
 
             @Override
             public void onDisconnect(InetSocketAddress addr) {
+            }
+
+            @Override
+            public void onDisconnect(InetSocketAddress addr, NodeType nodeType) {
                 assertThat(addr).isEqualTo(new InetSocketAddress(p.getRedisServerBindAddress(), p.getRedisServerPort()));
+                assertThat(nodeType).isEqualTo(NodeType.MASTER);
                 disconnectCounter.incrementAndGet();
             }
 
             @Override
             public void onConnect(InetSocketAddress addr) {
+            }
+
+            @Override
+            public void onConnect(InetSocketAddress addr, NodeType nodeType) {
                 assertThat(addr).isEqualTo(new InetSocketAddress(p.getRedisServerBindAddress(), p.getRedisServerPort()));
+                assertThat(nodeType).isEqualTo(NodeType.MASTER);
                 connectCounter.incrementAndGet();
             }
         });
@@ -803,7 +813,12 @@ public class RedissonTest extends BaseTest {
                 .run();
 
         Config config = new Config();
-        config.useSingleServer().setAddress(runner.getRedisServerAddressAndPort());
+        config.useSingleServer()
+                .setConnectionMinimumIdleSize(20)
+                .setConnectionPoolSize(20)
+                .setSubscriptionConnectionMinimumIdleSize(20)
+                .setSubscriptionConnectionPoolSize(20)
+                .setAddress(runner.getRedisServerAddressAndPort());
 
         RedissonClient r = Redisson.create(config);
         

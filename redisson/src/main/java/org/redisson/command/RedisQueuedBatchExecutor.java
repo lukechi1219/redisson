@@ -31,6 +31,7 @@ import org.redisson.misc.LogHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
@@ -47,24 +48,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R> {
 
     private final ConcurrentMap<MasterSlaveEntry, ConnectionEntry> connections;
+    private final Map<MasterSlaveEntry, Entry> aggregatedCommands;
 
     @SuppressWarnings("ParameterNumber")
     public RedisQueuedBatchExecutor(boolean readOnlyMode, NodeSource source, Codec codec, RedisCommand<V> command,
                                     Object[] params, CompletableFuture<R> mainPromise, boolean ignoreRedirect, ConnectionManager connectionManager,
-                                    RedissonObjectBuilder objectBuilder, ConcurrentMap<MasterSlaveEntry, Entry> commands,
+                                    RedissonObjectBuilder objectBuilder, ConcurrentMap<NodeSource, Entry> commands,
                                     ConcurrentMap<MasterSlaveEntry, ConnectionEntry> connections, BatchOptions options, AtomicInteger index,
                                     AtomicBoolean executed, RedissonObjectBuilder.ReferenceType referenceType,
-                                    boolean noRetry) {
+                                    boolean noRetry, Map<MasterSlaveEntry, Entry> aggregatedCommands) {
         super(readOnlyMode, source, codec, command, params, mainPromise, ignoreRedirect, connectionManager, objectBuilder,
                 commands, options, index, executed, referenceType, noRetry);
-        
+
+        this.aggregatedCommands = aggregatedCommands;
         this.connections = connections;
     }
     
     @Override
     public void execute() {
-        addBatchCommandData(null);
-        
+        if (source.getEntry() != null) {
+            Entry entry = aggregatedCommands.computeIfAbsent(source.getEntry(), k -> new Entry());
+
+            if (!readOnlyMode) {
+                entry.setReadOnlyMode(false);
+            }
+
+            Codec codecToUse = getCodec(codec);
+            BatchCommandData<V, R> commandData = new BatchCommandData<>(mainPromise, codecToUse, command, null, index.incrementAndGet());
+            entry.getCommands().add(commandData);
+        } else {
+            addBatchCommandData(null);
+        }
+
         if (!readOnlyMode && this.options.getExecutionMode() == ExecutionMode.REDIS_READ_ATOMIC) {
             throw new IllegalStateException("Data modification commands can't be used with queueStore=REDIS_READ_ATOMIC");
         }
@@ -79,7 +94,7 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
                 || RedisCommands.DISCARD.getName().equals(command.getName())) {
             super.releaseConnection(attemptPromise, connectionFuture);
         } else {
-            connectionManager.getShutdownLatch().release();
+            connectionManager.getServiceManager().getShutdownLatch().release();
         }
     }
     
@@ -104,7 +119,7 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
     protected void handleError(CompletableFuture<RedisConnection> connectionFuture, Throwable cause) {
         if (mainPromise instanceof BatchPromise) {
             BatchPromise<R> batchPromise = (BatchPromise<R>) mainPromise;
-            CompletableFuture sentPromise = batchPromise.getSentPromise();
+            CompletableFuture<?> sentPromise = batchPromise.getSentPromise();
             sentPromise.completeExceptionally(cause);
             mainPromise.completeExceptionally(cause);
             if (executed.compareAndSet(false, true)) {
@@ -120,7 +135,7 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
     
     @Override
     protected void sendCommand(CompletableFuture<R> attemptPromise, RedisConnection connection) {
-        MasterSlaveEntry msEntry = getEntry(source);
+        MasterSlaveEntry msEntry = getEntry();
         ConnectionEntry connectionEntry = connections.get(msEntry);
 
         boolean syncSlaves = options.getSyncSlaves() > 0;
@@ -151,7 +166,7 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
                 connectionEntry.setFirstCommand(false);
             } else {
                 if (RedisCommands.EXEC.getName().equals(command.getName())) {
-                    Entry entry = commands.get(msEntry);
+                    Entry entry = aggregatedCommands.get(msEntry);
 
                     List<CommandData<?, ?>> list = new ArrayList<>();
 
@@ -165,14 +180,14 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
                         list.add(new CommandData<>(new CompletableFuture<>(), codec, RedisCommands.CLIENT_REPLY, new Object[]{"ON"}));
                     }
                     if (options.getSyncSlaves() > 0) {
-                        BatchCommandData<?, ?> waitCommand = new BatchCommandData(RedisCommands.WAIT, 
+                        BatchCommandData<?, ?> waitCommand = new BatchCommandData<>(RedisCommands.WAIT,
                                 new Object[] { this.options.getSyncSlaves(), this.options.getSyncTimeout() }, index.incrementAndGet());
                         list.add(waitCommand);
                         entry.getCommands().add(waitCommand);
                     }
 
                     CompletableFuture<Void> main = new CompletableFuture<>();
-                    writeFuture = connection.send(new CommandsData(main, list, new ArrayList(entry.getCommands()),
+                    writeFuture = connection.send(new CommandsData(main, list, new ArrayList<>(entry.getCommands()),
                                 options.isSkipResult(), false, true, syncSlaves));
                 } else {
                     CompletableFuture<Void> main = new CompletableFuture<>();
@@ -186,17 +201,9 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
     
     @Override
     protected CompletableFuture<RedisConnection> getConnection() {
-        MasterSlaveEntry msEntry = getEntry(source);
-        ConnectionEntry entry = connections.get(msEntry);
-        if (entry == null) {
-            entry = new ConnectionEntry();
-            ConnectionEntry oldEntry = connections.putIfAbsent(msEntry, entry);
-            if (oldEntry != null) {
-                entry = oldEntry;
-            }
-        }
+        MasterSlaveEntry msEntry = getEntry();
+        ConnectionEntry entry = connections.computeIfAbsent(msEntry, k -> new ConnectionEntry());
 
-        
         if (entry.getConnectionFuture() != null) {
             connectionFuture = entry.getConnectionFuture();
             return connectionFuture;
@@ -209,9 +216,9 @@ public class RedisQueuedBatchExecutor<V, R> extends BaseRedisBatchExecutor<V, R>
             }
 
             if (this.options.getExecutionMode() == ExecutionMode.REDIS_WRITE_ATOMIC) {
-                connectionFuture = connectionManager.connectionWriteOp(source, null);
+                connectionFuture = connectionWriteOp(null);
             } else {
-                connectionFuture = connectionManager.connectionReadOp(source, null);
+                connectionFuture = connectionReadOp(null);
             }
             connectionFuture.toCompletableFuture().join();
             entry.setConnectionFuture(connectionFuture);

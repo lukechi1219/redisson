@@ -15,27 +15,13 @@
  */
 package org.redisson.connection;
 
-import io.netty.channel.EventLoopGroup;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
-import io.netty.util.concurrent.Future;
-import org.redisson.ElementsSubscribeService;
 import org.redisson.api.NodeType;
 import org.redisson.client.RedisClient;
-import org.redisson.client.RedisConnection;
-import org.redisson.client.RedisNodeNotFoundException;
-import org.redisson.client.codec.Codec;
-import org.redisson.client.protocol.RedisCommand;
-import org.redisson.config.Config;
-import org.redisson.config.MasterSlaveServersConfig;
-import org.redisson.misc.InfinitySemaphoreLatch;
 import org.redisson.misc.RedisURI;
 import org.redisson.pubsub.PublishSubscribeService;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,58 +30,30 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public interface ConnectionManager {
-    
-    RedisURI applyNatMap(RedisURI address);
 
-    CompletableFuture<RedisURI> resolveIP(RedisURI address);
-    
-    String getId();
-    
-    ElementsSubscribeService getElementsSubscribeService();
+    void connect();
 
     PublishSubscribeService getSubscribeService();
     
-    ExecutorService getExecutor();
-    
     RedisURI getLastClusterNode();
     
-    Config getCfg();
-
     boolean isClusterMode();
-
-    ConnectionEventsHub getConnectionEventsHub();
-
-    boolean isShutdown();
-
-    boolean isShuttingDown();
-    
-    IdleConnectionWatcher getConnectionWatcher();
 
     int calcSlot(String key);
     
     int calcSlot(byte[] key);
 
-    MasterSlaveServersConfig getConfig();
-
-    Codec getCodec();
-
     Collection<MasterSlaveEntry> getEntrySet();
 
     MasterSlaveEntry getEntry(String name);
 
-    MasterSlaveEntry getEntry(int slot);
+    MasterSlaveEntry getWriteEntry(int slot);
+
+    MasterSlaveEntry getReadEntry(int slot);
     
     MasterSlaveEntry getEntry(InetSocketAddress address);
-    
-    void releaseRead(NodeSource source, RedisConnection connection);
 
-    void releaseWrite(NodeSource source, RedisConnection connection);
-
-    CompletableFuture<RedisConnection> connectionReadOp(NodeSource source, RedisCommand<?> command);
-
-    CompletableFuture<RedisConnection> connectionWriteOp(NodeSource source, RedisCommand<?> command);
-
-    RedisClient createClient(NodeType type, RedisURI address, int timeout, int commandTimeout, String sslHostname);
+    MasterSlaveEntry getEntry(RedisURI addr);
 
     RedisClient createClient(NodeType type, InetSocketAddress address, RedisURI uri, String sslHostname);
     
@@ -107,14 +65,6 @@ public interface ConnectionManager {
 
     void shutdown(long quietPeriod, long timeout, TimeUnit unit);
     
-    EventLoopGroup getGroup();
-
-    Timeout newTimeout(TimerTask task, long delay, TimeUnit unit);
-
-    InfinitySemaphoreLatch getShutdownLatch();
-    
-    Future<Void> getShutdownPromise();
-
-    RedisNodeNotFoundException createNodeNotFoundException(NodeSource source);
+    ServiceManager getServiceManager();
 
 }

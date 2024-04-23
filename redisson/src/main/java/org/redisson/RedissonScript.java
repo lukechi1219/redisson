@@ -26,6 +26,7 @@ import org.redisson.misc.CompletableFutureWrapper;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -39,7 +40,7 @@ public class RedissonScript implements RScript {
 
     public RedissonScript(CommandAsyncExecutor commandExecutor) {
         this.commandExecutor = commandExecutor;
-        this.codec = commandExecutor.getConnectionManager().getCodec();
+        this.codec = commandExecutor.getServiceManager().getCfg().getCodec();
     }
     
     public RedissonScript(CommandAsyncExecutor commandExecutor, Codec codec) {
@@ -200,14 +201,18 @@ public class RedissonScript implements RScript {
     public <R> RFuture<R> evalShaAsync(String key, Mode mode, String shaDigest, ReturnType returnType,
             List<Object> keys, Object... values) {
         RedisCommand command = new RedisCommand(returnType.getCommand(), "EVALSHA");
+        String mappedKey = commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) key);
+        List<Object> mappedKeys = keys.stream()
+                                        .map(k -> commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) k))
+                                        .collect(Collectors.toList());
         if (mode == Mode.READ_ONLY && commandExecutor.isEvalShaROSupported()) {
             RedisCommand cmd = new RedisCommand(returnType.getCommand(), "EVALSHA_RO");
-            RFuture<R> f = commandExecutor.evalReadAsync(key, codec, cmd, shaDigest, keys, encode(Arrays.asList(values), codec).toArray());
+            RFuture<R> f = commandExecutor.evalReadAsync(mappedKey, codec, cmd, shaDigest, mappedKeys, encode(Arrays.asList(values), codec).toArray());
             CompletableFuture<R> result = new CompletableFuture<>();
             f.whenComplete((r, e) -> {
                 if (e != null && e.getMessage().startsWith("ERR unknown command")) {
                     commandExecutor.setEvalShaROSupported(false);
-                    RFuture<R> s = evalShaAsync(key, mode, shaDigest, returnType, keys, values);
+                    RFuture<R> s = evalShaAsync(mappedKey, mode, shaDigest, returnType, mappedKeys, values);
                     commandExecutor.transfer(s.toCompletableFuture(), result);
                     return;
                 }
@@ -215,16 +220,20 @@ public class RedissonScript implements RScript {
             });
             return new CompletableFutureWrapper<>(result);
         }
-        return commandExecutor.evalWriteAsync(key, codec, command, shaDigest, keys, encode(Arrays.asList(values), codec).toArray());
+        return commandExecutor.evalWriteAsync(mappedKey, codec, command, shaDigest, mappedKeys, encode(Arrays.asList(values), codec).toArray());
     }
 
     @Override
     public <R> RFuture<R> evalAsync(String key, Mode mode, String luaScript, ReturnType returnType, List<Object> keys,
             Object... values) {
+        String mappedKey = commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) key);
+        List<Object> mappedKeys = keys.stream()
+                .map(k -> commandExecutor.getServiceManager().getConfig().getNameMapper().map((String) k))
+                .collect(Collectors.toList());
         if (mode == Mode.READ_ONLY) {
-            return commandExecutor.evalReadAsync(key, codec, returnType.getCommand(), luaScript, keys, encode(Arrays.asList(values), codec).toArray());
+            return commandExecutor.evalReadAsync(mappedKey, codec, returnType.getCommand(), luaScript, mappedKeys, encode(Arrays.asList(values), codec).toArray());
         }
-        return commandExecutor.evalWriteAsync(key, codec, returnType.getCommand(), luaScript, keys, encode(Arrays.asList(values), codec).toArray());
+        return commandExecutor.evalWriteAsync(mappedKey, codec, returnType.getCommand(), luaScript, mappedKeys, encode(Arrays.asList(values), codec).toArray());
     }
 
     @Override

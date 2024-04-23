@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -57,7 +58,7 @@ public abstract class RedissonObject implements RObject {
     }
 
     public RedissonObject(CommandAsyncExecutor commandExecutor, String name) {
-        this(commandExecutor.getConnectionManager().getCodec(), commandExecutor, name);
+        this(commandExecutor.getServiceManager().getCfg().getCodec(), commandExecutor, name);
     }
 
     public static String prefixName(String prefix, String name) {
@@ -93,7 +94,7 @@ public abstract class RedissonObject implements RObject {
 
     @Override
     public String getName() {
-        return commandExecutor.getConnectionManager().getConfig().getNameMapper().unmap(name);
+        return commandExecutor.getServiceManager().getConfig().getNameMapper().unmap(name);
     }
 
     public final String getRawName() {
@@ -105,7 +106,7 @@ public abstract class RedissonObject implements RObject {
     }
 
     protected final void setName(String name) {
-        this.name = commandExecutor.getConnectionManager().getConfig().getNameMapper().map(name);
+        this.name = commandExecutor.getServiceManager().getConfig().getNameMapper().map(name);
     }
 
     @Override
@@ -471,6 +472,12 @@ public abstract class RedissonObject implements RObject {
         RFuture<Void> f2 = deletedTopic.removeListenerAsync(listenerId);
         CompletableFuture<Void> f = CompletableFuture.allOf(f1.toCompletableFuture(), f2.toCompletableFuture());
         return new CompletableFutureWrapper<>(f);
+    }
+
+    protected final List<String> map(String[] keys) {
+        return Arrays.stream(keys)
+                .map(k -> commandExecutor.getServiceManager().getConfig().getNameMapper().map(k))
+                .collect(Collectors.toList());
     }
 
 }

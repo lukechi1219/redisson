@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.redisson.api.stream;
+package org.redisson.client;
 
 /**
  *
  * @author Nikita Koksharov
  *
  */
-public interface StreamTrimArgsSource {
+public class RedisRetryException extends RedisException {
 
-    StreamTrimParams getParams();
-
+    public RedisRetryException(String message) {
+        super(message);
+    }
 }

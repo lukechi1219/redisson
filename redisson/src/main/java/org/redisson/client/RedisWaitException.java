@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.redisson.api.stream;
+package org.redisson.client;
 
 /**
+ * This error occurs when Redis server is busy.
  *
  * @author Nikita Koksharov
  *
  */
-public interface StreamAddArgsSource<K, V> {
+public class RedisWaitException extends RedisRetryException {
 
-    StreamAddParams<K, V> getParams();
+    private static final long serialVersionUID = -5658453331593019251L;
 
+    public RedisWaitException(String message) {
+        super(message);
+    }
 }
