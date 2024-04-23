@@ -6,12 +6,16 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.nv.module.redisson.AbstractRedissonBaseTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RBucket;
 import org.redisson.api.RBuckets;
+import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RTopic;
 import org.redisson.client.codec.StringCodec;
 
 public class RedisBasicTest extends AbstractRedissonBaseTest {
@@ -157,5 +161,81 @@ public class RedisBasicTest extends AbstractRedissonBaseTest {
                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
                         .parse("2020-12-31 23:59:59")
                         .getTime()));
+    }
+
+    @Test
+    public void testNettyThread() {
+
+        final String key = "cps:luke:test:nettyThread:key";
+
+        final RBucket<String> bucket = getClient().getBucket(key);
+
+        String str = bucket.get();
+
+        System.out.println("str: " + str);
+    }
+
+    @Test
+    public void testSubscribe() {
+
+        AtomicBoolean stop = new AtomicBoolean(false);
+
+        final String key = "cps:luke:test:pubSub:key";
+
+        final RTopic topic = getClient().getTopic(key);
+
+        topic.addListener(String.class, (channel, msg) -> {
+            System.out.println("channel: " + channel);
+            System.out.println("msg: " + msg);
+
+            stop.set(true);
+        });
+
+        while (!stop.get()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    public void testPublish() {
+
+        final String key = "cps:luke:test:pubSub:key";
+
+        final RTopic topic = getClient().getTopic(key);
+
+        topic.publish("test publish");
+    }
+
+    @Test
+    public void testRLocalCachedMap() {
+
+        final String key = "cps:luke:test:pubSub:key";
+
+        RLocalCachedMap<String, String> localCachedMap = getClient().getLocalCachedMap(key, LocalCachedMapOptions.defaults());
+
+        int count = 1;
+        String value = "value" + count;
+        localCachedMap.put("key1", value);
+
+        long start = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - start < 1000L * 60 * 3) {
+            try {
+                System.out.println("size: " + localCachedMap.size());
+
+                Thread.sleep(1000);
+
+                if (!value.equals(localCachedMap.get("key1"))) {
+                    localCachedMap.put("key1", value);
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

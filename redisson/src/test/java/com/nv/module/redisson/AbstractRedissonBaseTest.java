@@ -39,6 +39,7 @@ public abstract class AbstractRedissonBaseTest {
 				final Config config;
 
 				final URL url = AbstractRedissonBaseTest.class.getClassLoader().getResource("properties/" + fileName);
+				// final URL url = null;
 
 				if (url == null) {
 					//	throw new RuntimeException("File not found: " + fileName);
