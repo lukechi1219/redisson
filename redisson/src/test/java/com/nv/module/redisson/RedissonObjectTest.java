@@ -53,6 +53,8 @@ public class RedissonObjectTest extends AbstractRedissonBaseTest {
 		final RBucket<String> bucketStr1 = client.getBucket(key + ":string1");
 		bucketStr1.set("hello world 1");
 
+//		bucketStr1.removeListener(1);
+
 		final RBucket<String> bucketStr2 = client.getBucket(key + ":string2");
 		bucketStr2.set("hello world 2");
 
